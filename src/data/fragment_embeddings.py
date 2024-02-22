@@ -9,10 +9,10 @@ from tqdm import tqdm
 from utils.file_utils import save_pickle, load_pickle
 from utils.mol_utils import mols_from_smiles, mols_to_smiles
 
-SOS_TOKEN = "<SOS>"
 PAD_TOKEN = "<PAD>"
+SOS_TOKEN = "<SOS>"
 EOS_TOKEN = "<EOS>"
-TOKENS = [SOS_TOKEN, PAD_TOKEN, EOS_TOKEN]
+TOKENS = [PAD_TOKEN, SOS_TOKEN , EOS_TOKEN]
 START_IDX = len(TOKENS)
 
 class Vocabulary:
