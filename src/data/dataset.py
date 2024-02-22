@@ -35,7 +35,7 @@ class DataCollator:
         """
         # Sort the sequences in the batch by length in descending order
         sorted_fragment_sequences = sorted(fragment_sequences, key=len, reverse=True)
-        # Get the maxime length of sequences
+        # Get the maximum length of sequences
         max_length = len(sorted_fragment_sequences[0])
         # Initialise a 2D array of PAD tokens of shape [batch_size, longest_sequence_lenth] to fill with fragment sequences in the batch
         padded_seqs = np.full((len(sorted_fragment_sequences), max_length), self.vocab.PAD)
@@ -93,10 +93,11 @@ class DataCollator:
         tgt_tensor, tgt_lengths = self.stack_sequences(tgt)
         return src_tensor, tgt_tensor, src_lengths, tgt_lengths
 
-class FragmentDataset(Dataset):
+class MoleculeFragmentsDataset(Dataset):
     """
-    This class creates a dataset from the data, source and target of fragmented molecules.
-    The data.Datset is compatible with the torch.utils.data.DataLoader class.
+    This class represents the dataset of molecule fragments. The MoleculeFragmentsDataset.Dataset call is compatible with the torch.utils.data.DataLoader class.
+    It is responsible for loading and batching of the fragments dataset for training the model. Specifically, it handles sequence-to-sequence data by providing
+    the source and target sequences of fragments when training the model.
     """
     def __init__(self):
         """
