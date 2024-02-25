@@ -50,11 +50,11 @@ class VAEModel(nn.Module):
         # set the decoder
         self.decoder = Decoder(
             config=self.config,
-            input_size=self.input_size,
             embed_size=self.embed_size,
             hidden_size=self.hidden_size,
             hidden_layers=self.hidden_layers,
             latent_size=self.latent_size,
+            output_size=self.input_size,
             dropout=self.dropout,
             use_gpu=self.use_gpu
             )
@@ -124,7 +124,7 @@ class VAEModel(nn.Module):
         embeddings (torch.Tensor): the pre-trained embeddings
         """
         file_name = f'emb_{self.embed_size}.dat'
-        path = self.cofig.path('config') / file_name
+        path = self.config.path('config') / file_name
         embeddings = np.loadtxt(path, delimiter=',')
         return torch.from_numpy(embeddings).float()
 
@@ -237,11 +237,12 @@ class Decoder(nn.Module):
     This class inherits from the nn.Module class in PyTorch.
     """
     
-    def __init__(self, embed_size, hidden_size, hidden_layers, latent_size, output_size, dropout, use_gpu):
+    def __init__(self, config, embed_size, hidden_size, hidden_layers, latent_size, output_size, dropout, use_gpu):
         """
         The constructor for the Decoder class.
 
         Parameters:
+        config (Config): the configuration of the run
         embed_size (int): the size of the embeddings
         hidden_size (int): the size of the hidden layers
         hidden_layers (int): the number of hidden layers
@@ -251,7 +252,8 @@ class Decoder(nn.Module):
         use_gpu (bool): whether to use the GPU
         """
         super().__init__()
-
+        
+        self.config = config
         self.embed_size = embed_size
         self.hidden_size = hidden_size
         self.hidden_layers = hidden_layers
@@ -261,14 +263,14 @@ class Decoder(nn.Module):
         self.use_gpu = use_gpu
 
         self.rnn = nn.GRU(
-            input_size=self.embed_size + self.latent_size,
+            input_size=self.embed_size,
             hidden_size=self.hidden_size,
             num_layers=self.hidden_layers,
             dropout=self.dropout,
             batch_first=True
         )
 
-        self.output = nn.Linear(
+        self.rnn2out = nn.Linear(
             in_features=self.hidden_size,
             out_features=self.output_size
         )
