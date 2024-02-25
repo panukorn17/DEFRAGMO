@@ -8,6 +8,7 @@ from collections import defaultdict
 from tqdm import tqdm
 from utils.file_utils import save_pickle, load_pickle
 from utils.mol_utils import mols_from_smiles, mols_to_smiles
+from utils.config import Config
 
 PAD_TOKEN = "<PAD>"
 SOS_TOKEN = "<SOS>"
@@ -20,15 +21,17 @@ class Vocabulary:
     This class creates a vocabulary of fragments from the data.
     """
 
-    def __init__(self, data: pd.DataFrame):
+    def __init__(self, config: Config, data:pd.DataFrame):
         """
         The constructor for the Vocabulary class.
 
         Parameters:
+        config (Config): The configuration of the run.
         data (pd.DataFrame) [feature_length, number_of_molecules]: the source of the full dataset
         """
+        self.config = config
         self.pretrained_model = self.load_model()
-        w2i, i2w = self.get_embeddings(data)
+        w2i, i2w = self.get_embeddings(self.config, data)
         self.w2i = w2i
         self.i2w = i2w
         self.size = len(w2i)
@@ -100,12 +103,13 @@ class Vocabulary:
         """
         return self.w2i[EOS_TOKEN]
     
-    def get_embeddings(self, data) -> tuple:
+    def get_embeddings(self, config, data) -> tuple:
         """
         This method returns the embeddings of the vocabulary.
 
         Parameters:
-        data: the source of the full dataset
+        config (Config): the configuration of the run
+        data (pd.DataFrame): the dataset to create the vocabulary from
 
         Returns:
         tuple: A tuple containing two elements:
@@ -130,15 +134,20 @@ class Vocabulary:
         print("Getting embeddings for unique fragments...")
 
         start = time.time()
+        
         # Constructing sentences
         fragment_sentence = [MolSentence(mol2alt_sentence(frag_mol, 1)) for frag_mol in fragments_mol]
+        
         # Extracting embeddings to a numpy.array
         # Note that we always should mark unseen='UNK' in sentence2vec() so that model is taught how to handle unknown substructures
         embeddings_mol = [DfVec(x) for x in sentences2vec(fragment_sentence, self.pretrained_model, unseen='UNK')]
         embeddings_mol_vec = np.array([embed.vec for embed in embeddings_mol])
         embeddings_tokens = np.random.uniform(-0.05, 0.05, (len(TOKENS), 100))
         embeddings = np.vstack([embeddings_tokens, embeddings_mol_vec])
-        np.savetxt('emb_100.dat', embeddings, delimiter=",")
+        
+        # Save the embeddings
+        config_dir = config.path('config')
+        np.savetxt(f'{config_dir}/emb_100.dat', embeddings, delimiter=",")
         end = time.time()
         formatted_time = time.strftime('%H:%M:%S', time.gmtime(end - start))
         print(f"Time elapsed to get the embeddings: {formatted_time}.")
@@ -153,7 +162,7 @@ class Vocabulary:
         """
         print("Loading the pretrained model...")
         start = time.time()
-        model = Word2Vec.load("src/data/pretrained/model_300dim.pkl")
+        model = Word2Vec.load(f"{self.config.path('pretrained').as_posix()}/model_300dim.pkl")
         end = time.time()
         formatted_time = time.strftime('%H:%M:%S', time.gmtime(end - start))
         print(f"Time elapsed to load the pretrained model: {formatted_time}.")

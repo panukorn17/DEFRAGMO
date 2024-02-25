@@ -38,12 +38,18 @@ def save_json(obj, path):
     with open(path, 'w') as f:
         json.dump(obj, f, indent=4)
 
-def load_data():
+def load_data(config, data_type):
     """
     This function loads the data from the source file.
+
+    Parameters:
+    config (Config): the configuration of the runs.
+    data_type (str): selection between training set or test set.
 
     Returns:
     data (pandas.DataFrame) [number_of_molecules, features]: the source of the full dataset
     """
-    data = pd.read_csv('DATA/ZINC/PROCESSED/train.smi').reset_index(drop=True)
+    assert data_type in ['train', 'test']
+    data_path = config.path('data') / f'{data_type}.smi'
+    data = pd.read_csv(data_path).reset_index(drop=True)
     return data
