@@ -5,7 +5,7 @@ import pandas as pd
 
 from torch.utils.data import Dataset, DataLoader
 from utils.file_utils import load_data
-from .fragment_embeddings import Vocabulary
+from data.fragment_embeddings import Vocabulary
 
 class DataCollator:
     """
@@ -83,15 +83,15 @@ class DataCollator:
                                  [409, 618, 414,   2,   0,   0,   0,   0,   0]])
             - src_lengths (list of int) [batch_size]: The lengths of the source sequences of fragments.
                 Example: [9, 8, 7, 6, 5, 4]
-            - tgt_lengths (list of int) [batch_size]: The lengths of the target sequences of fragments.
+            - idx (list of int) [batch_size]: The indices of the dataset.
         """
         
         # Unzip the batch into source and target sequences
-        src, tgt, seq = zip(*batch)
+        src, tgt, idx, seq = zip(*batch)
         # Merge the sequences of fragments
         src_tensor, src_lengths = self.stack_sequences(src)
         tgt_tensor, tgt_lengths = self.stack_sequences(tgt)
-        return src_tensor, tgt_tensor, src_lengths, tgt_lengths
+        return src_tensor, tgt_tensor, src_lengths, idx
 
 class MoleculeFragmentsDataset(Dataset):
     """
@@ -99,16 +99,18 @@ class MoleculeFragmentsDataset(Dataset):
     It is responsible for loading and batching of the fragments dataset for training the model. Specifically, it handles sequence-to-sequence data by providing
     the source and target sequences of fragments when training the model.
     """
-    def __init__(self):
+    def __init__(self, config):
         """
-        The constructor for the FragmentDataset class.
+        The constructor for the FragmentDataset class. This sets the data, vocabulary and data parameters according to 
+        the run configuration.
 
         Parameters:
-        data: the source of the full dataset
+        config: the source of the full dataset
         size: the size of the dataset
         vocab: the vocabulary of the dataset
         """
-        self.data = load_data()
+        self.config = config
+        self.data = load_data(self.config, data_type = "train")
         self.size = len(self.data)
         self.vocab = None
     
@@ -132,13 +134,14 @@ class MoleculeFragmentsDataset(Dataset):
         tuple: A tuple containing three elements:
             - src (list): The source sequence of fragments, translated to integers
             - tgt (list): The target sequence of fragments, translated to integers
+            - idx (list): The index of the dataset
             - seq (list): The sequence of fragments, in string format, without delimiters
         """
         seq = self.data.fragments[idx].split(" ")
         seq = self.vocab.append_delimiters(seq)
         src = self.vocab.translate(seq[:-1])
         tgt = self.vocab.translate(seq[1:])
-        return src, tgt, seq[1:-1]
+        return src, tgt, idx, seq[1:-1]
     
     def set_vocab(self):
         """
@@ -149,7 +152,7 @@ class MoleculeFragmentsDataset(Dataset):
         """
         start = time.time()
         if self.vocab is None:
-            self.vocab = Vocabulary(self.data)
+            self.vocab = Vocabulary(self.config, self.data)
         end = time.time()
         formatted_time = time.strftime('%H:%M:%S', time.gmtime(end - start))
         print(f"Time elapsed to set the vocabulary: {formatted_time}.")
