@@ -27,12 +27,12 @@ def load_checkpoint(trainer, last=True)->int:
     trainer.losses = checkpoint['losses']
     return checkpoint['epoch']
 
-def save_checkpoint(trainer, epoch, file_name)->None:
+def save_checkpoint(trainer, epoch: int, file_name: str)->None:
     """
     Function that saves the latest checkpoint
 
     Parameters:
-    trainer (Trainer): The trainer object
+    trainer (VAETrainer): The trainer object
     epoch (int): The current epoch
     file_name (str): The name of the file to save the checkpoint
     """
@@ -76,5 +76,5 @@ def dump(config, losses, CE_loss, KL_loss, pred_logp_loss, pred_sas_loss, beta_l
         df["logP loss"] = pred_logp_loss
     if config.get('pred_sas'):
         df["SAS loss"] = pred_sas_loss
-    filename = config.path('performance') / "loss.csv"
+    filename = config.path('results') / "loss.csv"
     df.to_csv(filename)
