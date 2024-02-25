@@ -103,6 +103,14 @@ class Vocabulary:
         """
         return self.w2i[EOS_TOKEN]
     
+    @property
+    def TOKEN_IDS(self)->list:
+        """
+        This method returns the indices of the special tokens as a list. This is a method that behaves like an attribute.
+        When calling this method, simply use the syntax: vocab.TOKEN_IDS.
+        """
+        return [self.SOS, self.EOS, self.PAD]
+    
     def get_embeddings(self, config, data) -> tuple:
         """
         This method returns the embeddings of the vocabulary.
@@ -168,9 +176,41 @@ class Vocabulary:
         print(f"Time elapsed to load the pretrained model: {formatted_time}.")
         return model
     
+    def translate_str(self, word) -> int:
+        """
+        This method translates a fragment from a string to an integer.
+
+        Parameters:
+        word (string) [1]: The fragment that makes a the molecule. This includes SOS and EOS tokens.
+        Example: word = '*c1ccc(C)cc1'
+
+        Returns:
+        word_translated (integer) [1]: The fragment that makes up the molecule translated to an integer.
+        This would inclued the SOS and EOS tokens.
+        Example: translate_str(word) = 575
+        """
+        word_translated = self.w2i[word]
+        return word_translated
+
+    def translate_int(self, word) -> str:
+        """
+        This method translates a fragment from an integer to a string.
+
+        Parameters:
+        word (integer) [1]: The fragment that makes up the molecule translated to an integer.
+        This would inclued the SOS and EOS tokens.
+        Example: word = 575
+
+        Returns:
+        word_translated (string) [1]: The fragment that makes a the molecule. This includes SOS and EOS tokens.
+        Example: translate_int(word) = '*c1ccc(C)cc1'
+        """
+        word_translated = self.i2w[word]
+        return word_translated
+    
     def translate(self, sentence) -> list:
         """
-        This method translates a list of fragments to a list of integers.
+        This method translates a list of fragment strings to a list of integers.
 
         Parameters:
         sentence (list of strings) [sequence_length]: The sequence of fragments that make up the molecule.
@@ -183,5 +223,17 @@ class Vocabulary:
         Example: vocab.translate(seq[:-1]) = [0, 575, 363, 158, 437, 81, 529]
                   vocab.translate(seq[1:]) = [575, 363, 158, 437, 81, 529, 2]
         """
-        sentence_translated = [self.w2i[token] for token in sentence]
+        sentence_translated = []
+        for word in sentence:
+            
+            # Check if the word is in the vocabulary and is not a special token
+            if word not in self.TOKEN_IDS:
+                if isinstance(word, np.integer):
+                    sentence_translated.append(self.translate_int(word))
+                elif isinstance(word, str):
+                    sentence_translated.append(self.translate_str(word))
+            
+            # if the word is an EOS token, break the loop
+            elif word == self.EOS:
+                break
         return sentence_translated
