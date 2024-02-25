@@ -127,6 +127,25 @@ class VAEModel(nn.Module):
         path = self.config.path('config') / file_name
         embeddings = np.loadtxt(path, delimiter=',')
         return torch.from_numpy(embeddings).float()
+    
+    def sum_fingerprints(self, inputs, embed_size):
+        """
+        This method sums the embeddings of the input sequences.
+
+        Parameters:
+        inputs (torch.Tensor): the input data
+        embed_size (int): the size of the embeddings
+        """
+        vec_frag_arr = torch.zeros(embed_size)
+        for idx2, (tgt_i) in enumerate(inputs):
+            vec_frag_sum = torch.sum(self.embedder(tgt_i[tgt_i > 2]), 0)
+            # vec_frag_sum is of shape (embed_size)
+            if idx2 == 0:
+                vec_frag_arr = vec_frag_sum
+            else:
+                vec_frag_arr = torch.vstack((vec_frag_arr, vec_frag_sum))
+                # vec_frag_arr is of shape (batch_size, embed_size)
+        return vec_frag_arr
 
 class Encoder(nn.Module):
     """
