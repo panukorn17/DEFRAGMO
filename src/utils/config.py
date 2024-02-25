@@ -3,10 +3,10 @@ import os
 from pathlib import Path
 from datetime import datetime
 
-from file_utils import load_pickle, save_pickle, save_json
+from utils.file_utils import load_pickle, save_pickle, save_json
 
 PROJECT_DIR = Path('./src')
-DATA_DIR = PROJECT_DIR / 'data'
+DATA_DIR = Path('./data')
 RUNS_DIR = PROJECT_DIR / 'runs'
 DEFAULT_EXPT_PARAMS = {
     # General
@@ -72,7 +72,7 @@ class Config:
         return config
     
     # define the instance attributes
-    def __init__(self, dataset, **run_params):
+    def __init__(self, **run_params):
         """
         The constructor which initialises the configuration object with the default parameters.
 
@@ -80,8 +80,8 @@ class Config:
         params (dict): The parameters of the configuration.
         """
         # Get the run info
-        run_name, start_date_time = get_run_info(run_params.get('data_name', 'default'))
-        data_path = DATA_DIR / dataset / 'PROCESSED'
+        run_name, start_date_time = get_run_info(run_params['data_name'])
+        data_path = DATA_DIR / run_params['data_name'] / 'processed'
         params = DEFAULT_EXPT_PARAMS.copy()
 
         # add parameters to the params attribute
@@ -89,7 +89,7 @@ class Config:
             'run_name': run_name,
             'start_date_time': start_date_time,
             'data_path': data_path.as_posix(),
-            'dataset': dataset
+            'data_name': run_params['data_name']
         })
 
         # create the directory for the run
@@ -132,7 +132,36 @@ class Config:
         for key, value in new_params.items():
             if key in self.params:
                 self.params[key] = value
+    
+    def path(self, name: str)->Path:
+        """
+        Returns the data path in the Path object format
 
+        Parameters:
+        name (str): The name of the path
+        """
+        return self.paths[name]
+    
+    def get(self, param: str):
+        """
+        Returns the parameter value in the params dict
+
+        Parameters:
+        param (str): the name of the parameter to return the value of from the params dict
+        """
+        if param in self.params:
+            return self.params[param]
+        raise ValueError(f"{self} does not contain the parameter: {param}.")
+    
+    def write_summary(self, writer):
+        """
+        Adds the text to the tensorboard summary
+
+        Parameters:
+        writer (tensorboardX.SummaryWriter): the writer class for the tensorboard log
+        """
+        tag, text = get_text_summary(self.params)
+        writer.add_text(tag, text, 0)
 
 
 def get_run_info(data_name: str) -> tuple:
@@ -187,5 +216,46 @@ def create_run_dir(root: str, run_name: str, data_path: str)->dict:
     results_dir = run_dir / 'results'
     paths_dict['results'] = results_dir
     os.makedirs(results_dir, exist_ok=True)
+
+    # create the checkpoint directory
+    ckpt_dir = run_dir / 'checkpoints'
+    paths_dict['ckpt'] = ckpt_dir
+    os.makedirs(ckpt_dir, exist_ok=True)
+    
+    # add the pretrained model file directory
+    pretrained_dir = PROJECT_DIR / 'data' / 'pretrained'
+    paths_dict['pretrained'] = pretrained_dir
     
     return paths_dict
+
+def get_text_summary(params):
+    """
+    Function to return a HTML text summary of the run.
+
+    Parameters:
+    params (dict): the dictionary of the run parameters
+
+    Returns:
+    Tuple:
+        - tag (tuple of string): the title tag of the experiment
+        - text (string): the detials of the experiment in HTML
+    """
+    start_time = params.get('start_time')
+    tag = (f"Experiment params: {params.get('title')}\n")
+
+    text = f"<h3>{tag}</h3>\n"
+    text += '<pre>'
+    text += f"Start Time: {start_time}\n"
+    text += f'CWD: {os.getcwd()}\n'
+    text += f'PID: {os.getpid()}\n'
+    text += f"Random Seed: {params.get('random_seed')}\n"
+    text += '</pre>\n<pre>'
+
+    skip_keys = ['title', 'random_seed', 'run_name']
+    for key, val in params.items():
+        if key in skip_keys:
+            continue
+        text += f'{key}: {val}\n'
+    text += '</pre>'
+
+    return tag, text
