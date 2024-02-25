@@ -17,24 +17,31 @@ def train_vae(config):
     trainer.train(dataset.get_loader(), start_epoch=0)
 
 if __name__ == '__main__':
-    """dataset = MoleculeFragmentsDataset()
-    dataset.set_vocab()
-
-    loader = dataset.get_loader()
-    for idx, (src_tensor, tgt_tensor, src_lengths, tgt_lengths) in enumerate(loader):
-        print(src_tensor, tgt_tensor)
-        """
-    # parse the arguments and call the function
-    parser = setup_parser()
-    simulated_args = [
-                'train',
-                '--data_name', 'ZINC',
-                '--num_epochs', '1'
-            ]
-        
-    # parse the arguments and create a dictionary of the arguments
-    args = vars(parser.parse_args(simulated_args))
-
+    debug = True
+    if debug:
+        # parse the arguments and call the function
+        parser = setup_parser()
+        simulated_args = [
+                    'train',
+                    '--data_name', 'ZINC',
+                    '--num_epochs', '15',
+                    '--batch_size', '16',
+                    '--embed_size', '100',
+                    '--hidden_layers', '2',
+                    '--hidden_size', '64',
+                    '--latent_size', '32',
+                    '--pooling', 'sum_fingerprints',
+                    '--use_gpu',
+                    '--pred_logp',
+                    '--pred_sas'
+                ]
+            
+        # parse the arguments and create a dictionary of the arguments
+        args = vars(parser.parse_args(simulated_args))
+    else: 
+        # parse the arguments and call the function
+        parser = setup_parser()
+        args = vars(parser.parse_args())
     # get the command and remove it from the dictionary
     command = args.pop('command')
 
