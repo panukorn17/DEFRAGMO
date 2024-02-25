@@ -41,6 +41,7 @@ class VAETrainer:
 
         # initialise the loss lists
         self.pred_logp_loss = None
+        self.pred_sas_loss = None
         if self.config.get('pred_logp') is True:
             self.pred_logp_loss = []
         if self.config.get('pred_sas') is True:
@@ -53,6 +54,10 @@ class VAETrainer:
     def train(self, loader, start_epoch)->None:
         """
         This method trains the model for a specified number of epochs.
+
+        Parameters:
+        loader (DataLoader): A DataLoader object for the dataset)
+        start_epoch (int): The epoch to start the training of the model
         """
         # get the number of epochs
         num_epochs = self.config.get('num_epochs')
@@ -98,12 +103,12 @@ class VAETrainer:
                 logger.log('sas_loss', sas_loss, epoch)
 
             # save the checkpoint
-            save_checkpoint(self, epoch, filename="last.pt")
+            save_checkpoint(self, epoch, file_name="last.pt")
             
             # save the best loss checkpoint
             if epoch_loss < self.best_loss:
                 self.best_loss = epoch_loss
-                save_checkpoint(self, epoch, filename=f'best_loss.pt')
+                save_checkpoint(self, epoch, file_name=f'best_loss.pt')
 
             # print the epoch loss
             self.log_epoch(start, epoch, epoch_loss)
@@ -140,7 +145,9 @@ class VAETrainer:
         epoch_CE_loss = 0
         epoch_KL_loss = 0
 
-        # initialise the logp and sas labels
+        # initialise the logp and sas predictions and labels
+        pred_logp = None
+        pred_sas = None
         labels_logp = None
         labels_sas = None
 
@@ -148,7 +155,7 @@ class VAETrainer:
         if epoch > 0 and self.config.get('use_scheduler'):
             self.scheduler.step()
         
-        for idx, (src, tgt, lengths, data_index, tgt_str) in enumerate(loader):
+        for idx, (src, tgt, lengths, data_index) in enumerate(loader):
             # zero the gradients
             self.optimizer.zero_grad()
 
@@ -227,7 +234,7 @@ class VAETrainer:
         penalty_weights = penalty / np.linalg.norm(penalty) * 50
         return penalty_weights
     
-    def print_loss(config, epoch, CE_loss, KL_loss, pred_logp, labels_logp, logp_loss, pred_sas, labels_sas, sas_loss, data_index, beta)->None:
+    def print_loss(self, config, epoch, CE_loss, KL_loss, pred_logp, labels_logp, logp_loss, pred_sas, labels_sas, sas_loss, data_index, beta)->None:
         """
         This method prints the loss values for the current epoch.
 
@@ -269,6 +276,24 @@ class VAETrainer:
         KL_loss_str = f"{KL_loss.item():.4f}"
         print(f"CE Loss: {CE_loss_str}, KL Loss: {KL_loss_str}")
 
+    def log_epoch(self, start_time: time, epoch: int, epoch_loss: float)->None:
+        """
+        This method logs the epoch loss to the console.
+
+        Parameters:
+        start_time (time): The start time of the epoch
+        epoch (int): The current epoch
+        epoch_loss (float): The loss value for the epoch
+        """
+        end = time.time() - start_time
+        elapsed = time.strftime("%H:%M:%S", time.gmtime(end))
+
+        print(f'epoch {epoch:06d} - '
+              f'loss {epoch_loss:6.4f} - ',
+              end=' ')
+
+        print(f'elapsed {elapsed}')
+
 class TensorBoardLogger:
     """
     This class is responsible for logging the loss values to TensorBoard.
@@ -276,7 +301,7 @@ class TensorBoardLogger:
 
     def __init__(self, config):
         self.config = config
-        self.writer = SummaryWriter(self.config.path('tensorboard').as_posix())
+        self.writer = SummaryWriter(self.config.path('log').as_posix())
         self.config.write_summary(self.writer)
 
     def log(self, tag, value, epoch):
