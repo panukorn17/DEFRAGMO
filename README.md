@@ -1,6 +1,31 @@
 # DEFRAGMO "a DEep FRAGment-based generative model for de novo MOLecular design"
 Link to [Research paper and findings](https://drive.google.com/file/d/1iilahcVytCHjJU3EMK2Gi9Ytd-LH7rBs/view?usp=sharing)
 
-### This code is an extension of the publicly available code by Podda et al. (2020) for the paper "A Deep Generative Model for Fragment-Based Molecule Generation" (AISTATS 2020)
-### The original paper and the proceedings can be found through the following links:
-Links:  [Paper](http://proceedings.mlr.press/v108/podda20a/podda20a.pdf) - [AISTATS 2020 proceedings](http://proceedings.mlr.press/v108/)
+This code is based on the publicly available code by Podda et al. (2020) for the paper "A Deep Generative Model for Fragment-Based Molecule Generation" (AISTATS 2020). The original paper and the proceedings can be found through the following links: [Paper](http://proceedings.mlr.press/v108/podda20a/podda20a.pdf) - [AISTATS 2020 proceedings](http://proceedings.mlr.press/v108/)
+
+### Getting started
+To get started, follow these steps:
+1. **Create a Conda Environment** and install all the packages in the `environment.yml` file using the following command:
+```bash
+conda env create -f environment.yml
+```
+This will create a conda environment called DEFRAGMO and install all the relevant packages.
+
+2. **Update mol2vec's sentences2vec function** to be compatible with Gensim version 4.0.0+. Locate the *features.py* file from the installed mol2vec library. On line 425, change the following code:
+```python
+keys = set(model.wv.vocab.keys())
+```
+```python
+keys = set(model.wv.key_to_index.keys())
+```
+### Training the model
+To train the model run the following command:
+```bash
+python  src/manage.py train --data_name <name_of_dataset> --use_gpu --batch_size <size_of_batch> --embed_size <embedding_size> --num_epochs <number_of_epochs> --hidden_layers <number_of_hidden_layers> --hidden_size <hidden_size> --latent_size <latent_size> --pooling <pooling_method> --pred_sas --pred_logp
+```
+To get the full list of hyperparameters that can be altered, `run python src/manage.py train --help`. Note that currently, the **embedding_size has to be 100** as we are using the pretrained mol2vec embeddings.
+
+#### Pooling method
+The original paper did not implement a pooling method for the encoder. To leave the model training under this setting, remove `--pooling <pooling_method>` from the training command (Figure (a)). For our paper, we summed the fingerprint embeddings of each fragment. To implement this model, add `--pooling sum_fingerprints` to the training command (Figure (b)). We've also implemented mean pooling (`--pooling mean`) and max pooling (`--pooling max`) as detailed by [Long et al. (2020)](https://arxiv.org/pdf/1911.03976.pdf) to prevent posterior collapse.
+
+![Model Architecture](images/model_architecture_pooling.png)
