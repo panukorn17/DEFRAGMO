@@ -17,7 +17,7 @@ def train_vae(config):
     trainer.train(dataset.get_loader(), start_epoch=0)
 
 if __name__ == '__main__':
-    debug = True
+    debug = False
     if debug:
         # parse the arguments and call the function
         parser = setup_parser()
