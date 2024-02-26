@@ -12,7 +12,7 @@ def setup_parser()-> argparse.ArgumentParser:
 
     # create the parser for the "train" command
     parser_train = subparsers.add_parser('train', help='Train the vae model')
-    parser_train.add_argument('--data_name', type=str, help='The name of the model')
+    parser_train.add_argument('--data_name', type=str, default = 'ZINC', choices=['ZINC'], help='The name of the dataset')
     parser_train.add_argument('--use_gpu', action='store_true', help='Whether to use the GPU')
     parser_train.add_argument('--batch_size', type=int, help='The batch size')
     parser_train.add_argument('--num_workers', type=int, help='The number of workers')
