@@ -1,9 +1,10 @@
 import os
+import json
 
 from pathlib import Path
 from datetime import datetime
 
-from utils.file_utils import load_pickle, save_pickle, save_json
+from utils.file_utils import load_pickle, save_pickle, save_json, load_json
 
 PROJECT_DIR = Path('./src')
 DATA_DIR = Path('./data')
@@ -179,6 +180,19 @@ def get_run_info(data_name: str) -> tuple:
     start_date_time = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     run_name = f'{start_date_time}-{data_name}'
     return run_name, start_date_time
+
+def get_data_info(data_name:str)->json:
+    """
+    Gets the data information.
+
+    Parameters:
+    data_name (str): The name of the dataset e.g. ZINC
+
+    Returns:
+    dict of data information
+    """
+    data_path = PROJECT_DIR / 'utils/data' / f'{data_name}.json'
+    return load_json(data_path)
 
 def create_run_dir(root: str, run_name: str, data_path: str)->dict:
     """
