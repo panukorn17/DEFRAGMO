@@ -1,7 +1,23 @@
 from data.dataset import MoleculeFragmentsDataset
 from training.vae_trainer import VAETrainer
-from utils.parser_utils import setup_parser
 from utils.config import Config
+
+from utils.parser_utils import setup_parser
+from utils.config import get_data_info
+
+def preprocess(data_name:str)->None:
+    """
+    This function is responsible for preprocessing the data which is used to train the VAE model.
+
+    Parameters:
+    data_name (str): The name of the dataset e.g. ZINC.
+    """
+    data_info = get_data_info(data_name)
+    dataset = clean_dataset(data_info)
+    dataset = add_atom_counts(dataset, data_info)
+    dataset = add_bond_counts(dataset, data_info)
+    dataset = add_ring_counts(dataset, data_info)
+    
 
 def train_vae(config):
     """
@@ -42,9 +58,13 @@ if __name__ == '__main__':
         # parse the arguments and call the function
         parser = setup_parser()
         args = vars(parser.parse_args())
+        
     # get the command and remove it from the dictionary
     command = args.pop('command')
 
+    if command == 'preprocess':
+        data_name = args.pop('data_name')
+        preprocess(data_name)
     if command == 'train':
         config = Config(**args)
         train_vae(config)
