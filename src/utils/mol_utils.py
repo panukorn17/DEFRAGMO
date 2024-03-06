@@ -47,3 +47,17 @@ def mols_from_smiles(smiles):
     list: The list of molecules of the SMILES strings
     """
     return [mol_from_smiles(smile) for smile in smiles]
+
+def canonicalize(smiles:str, clear_stereo=False):
+    """
+    This function returns the canonicalised smiles representation and has the option
+    to clear stereochemistry i.e. remove the @@.
+
+    Parameters:
+    smiles (str): the smiles representation of the molecule.
+    clear_stereo (bool): boolean variable to clear stereochemistry of a molecule.
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    if clear_stereo:
+        Chem.RemoveStereochemistry(mol)
+    return Chem.MolToSmiles(mol, isomericSmiles=True)
