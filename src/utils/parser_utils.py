@@ -10,13 +10,36 @@ def setup_parser()-> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Train a model on a dataset')
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
+    # create the parser for the "fragment" command
+    parser_fragment = subparsers.add_parser('preprocess', help='Preprocess the dataset for training')
+    parser_fragment.add_argument(
+        '--data_name', type=str, default = 'ZINC', 
+        choices=['ZINC'], 
+        help='The name of the dataset')
+    parser_fragment.add_argument(
+        '--method', type=str, default='DEFRAGMO',
+        choices=['DEFRAGMO','PODDA'],
+        help='the method to fragment the dataset'
+    )
+
     # create the parser for the "train" command
     parser_train = subparsers.add_parser('train', help='Train the vae model')
-    parser_train.add_argument('--data_name', type=str, default = 'ZINC', choices=['ZINC'], help='The name of the dataset')
-    parser_train.add_argument('--use_gpu', action='store_true', help='Whether to use the GPU')
-    parser_train.add_argument('--batch_size', type=int, help='The batch size')
-    parser_train.add_argument('--num_workers', type=int, help='The number of workers')
-    parser_train.add_argument('--num_epochs', type=int, help='The number of epochs')
+    parser_train.add_argument(
+        '--data_name', type=str, default = 'ZINC', 
+        choices=['ZINC'], 
+        help='The name of the dataset')
+    parser_train.add_argument(
+        '--use_gpu', action='store_true', 
+        help='Whether to use the GPU')
+    parser_train.add_argument(
+        '--batch_size', type=int, 
+        help='The batch size')
+    parser_train.add_argument(
+        '--num_workers', type=int, 
+        help='The number of workers')
+    parser_train.add_argument(
+        '--num_epochs', type=int, 
+        help='The number of epochs')
     parser_train.add_argument(
         '--pooling', default = None,
         choices=['mean', 'max', 'sum_fingerprints', None],
