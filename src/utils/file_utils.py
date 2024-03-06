@@ -38,6 +38,15 @@ def save_json(obj, path):
     with open(path, 'w') as f:
         json.dump(obj, f, indent=4)
 
+def load_json(path:str)->json:
+    """
+    This function loads the json object from the path
+
+    Parameters:
+    path (str): the path to the json object to load
+    """
+    return json.load(open(path,'r'))
+
 def load_data(config, data_type):
     """
     This function loads the data from the source file.
