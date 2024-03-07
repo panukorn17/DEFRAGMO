@@ -30,7 +30,6 @@ def preprocess(data_name:str)->None:
     dataset = add_fragments(dataset, mols, smiles)
     dataset = dataset[["smiles","fragments","n_fragments","C","F","N","O","Other","SINGLE","DOUBLE","TRIPLE","Tri","Quad","Pent","Hex","logP","mr","qed","SAS"]]
     dataset.to_csv((DATA_DIR / data_name / 'processed/processed.smi').as_posix(), index=False)
-    print(dataset)
     
 
 def train_vae(config:Config)->None:
@@ -47,7 +46,7 @@ def train_vae(config:Config)->None:
     trainer.train(dataset.get_loader(), start_epoch=0)
 
 if __name__ == '__main__':
-    debug = True
+    debug = False
     if debug:
         # parse the arguments and call the function
         parser = setup_parser()
