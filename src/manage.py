@@ -1,10 +1,12 @@
 from data.dataset import MoleculeFragmentsDataset
 from training.vae_trainer import VAETrainer
 from utils.config import Config
+from tqdm import tqdm
 
 from utils.parser_utils import setup_parser
-from utils.config import get_data_info
-from data.preprocess import read_and_clean_dataset
+from utils.config import get_data_info, DATA_DIR
+from utils.mol_utils import mols_from_smiles
+from data.preprocess import read_and_clean_dataset, add_atom_counts, add_bond_counts, add_ring_counts, add_property, add_fragments
 
 def preprocess(data_name:str)->None:
     """
@@ -15,12 +17,23 @@ def preprocess(data_name:str)->None:
     """
     data_info = get_data_info(data_name)
     dataset = read_and_clean_dataset(data_info)
-    dataset = add_atom_counts(dataset, data_info)
-    dataset = add_bond_counts(dataset, data_info)
-    dataset = add_ring_counts(dataset, data_info)
+    smiles = dataset.smiles.tolist()
+    mols = mols_from_smiles(smiles)
+    dataset = add_atom_counts(dataset, mols, data_info)
+    dataset = add_bond_counts(dataset, mols, data_info)
+    dataset = add_ring_counts(dataset, mols, data_info)
+
+    print("Adding properties ...")
+    for prop in tqdm(data_info['properties']):
+        if prop not in dataset.columns:
+            dataset = add_property(dataset, mols, prop)
+    dataset = add_fragments(dataset, mols, smiles)
+    dataset = dataset[["smiles","fragments","n_fragments","C","F","N","O","Other","SINGLE","DOUBLE","TRIPLE","Tri","Quad","Pent","Hex","logP","mr","qed","SAS"]]
+    dataset.to_csv((DATA_DIR / data_name / 'processed/processed.smi').as_posix(), index=False)
+    print(dataset)
     
 
-def train_vae(config):
+def train_vae(config:Config)->None:
     """
     This function is responsible for training the VAE model.
 
@@ -34,10 +47,20 @@ def train_vae(config):
     trainer.train(dataset.get_loader(), start_epoch=0)
 
 if __name__ == '__main__':
-    debug = False
+    debug = True
     if debug:
         # parse the arguments and call the function
         parser = setup_parser()
+
+        # simulated arguments for preprocessing
+        simulated_args = [
+                    'preprocess',
+                    '--data_name', 'ZINC',
+                    '--method', 'DEFRAGMO'
+                ]
+        
+        """
+        # simulated arguments for model training
         simulated_args = [
                     'train',
                     '--data_name', 'ZINC',
@@ -52,7 +75,7 @@ if __name__ == '__main__':
                     '--pred_logp',
                     '--pred_sas'
                 ]
-            
+        """
         # parse the arguments and create a dictionary of the arguments
         args = vars(parser.parse_args(simulated_args))
     else: 
