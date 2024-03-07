@@ -4,6 +4,7 @@ from utils.config import Config
 
 from utils.parser_utils import setup_parser
 from utils.config import get_data_info
+from data.preprocess import read_and_clean_dataset
 
 def preprocess(data_name:str)->None:
     """
@@ -13,7 +14,7 @@ def preprocess(data_name:str)->None:
     data_name (str): The name of the dataset e.g. ZINC.
     """
     data_info = get_data_info(data_name)
-    dataset = clean_dataset(data_info)
+    dataset = read_and_clean_dataset(data_info)
     dataset = add_atom_counts(dataset, data_info)
     dataset = add_bond_counts(dataset, data_info)
     dataset = add_ring_counts(dataset, data_info)
