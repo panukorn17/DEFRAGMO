@@ -57,7 +57,7 @@ if __name__ == '__main__':
                     '--data_name', 'ZINC',
                     '--method', 'DEFRAGMO'
                 ]
-        
+        #python  src/manage.py preprocess --data_name <name_of_dataset> --method <name_of_method>
         """
         # simulated arguments for model training
         simulated_args = [

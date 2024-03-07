@@ -18,6 +18,16 @@ keys = set(model.wv.vocab.keys())
 ```python
 keys = set(model.wv.key_to_index.keys())
 ```
+
+### Preprocess the dataset
+To preprocess the data run the following command:
+
+```bash
+python  src/manage.py preprocess --data_name <name_of_dataset> --method <name_of_method>
+```
+
+To use our fragmentation algorithm, replace `<name_of_method>` with `DEFRAGMO`, to use the original fragmentation method replace this with `PODDA`.
+
 ### Training the model
 To train the model run the following command:
 ```bash
