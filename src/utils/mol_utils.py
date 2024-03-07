@@ -1,7 +1,6 @@
 import pandas as pd
 
 from rdkit import Chem
-from data.molecule_structures import count_atoms
 
 def mol_to_smiles(mol):
     """
@@ -64,24 +63,3 @@ def canonicalize(smiles:str, clear_stereo=False):
     if clear_stereo:
         Chem.RemoveStereochemistry(mol)
     return Chem.MolToSmiles(mol, isomericSmiles=True)
-
-def add_atom_counts(dataset:pd.DataFrame, info:dict)->pd.DataFrame:
-    """
-    This function adds the count of atoms in each molecule to the dataset dataframe.
-
-    Parameters:
-    dataset (pd.DataFrame): dataset of the molecules
-    info (dict): the information dictionary of the dataset
-    """
-    smiles = dataset.smiles.tolist()
-    mols = mols_from_smiles(smiles)
-    counts = [count_atoms(mol, info['atoms']) for mol in mols]
-    return pd.concat([dataset, pd.DataFrame(counts)], axis=1, sort=False)
-
-
-def add_bond_counts(dataset, info, n_jobs):
-    return _add_counts(dataset, count_bonds, info['bonds'], n_jobs)
-
-
-def add_ring_counts(dataset, info, n_jobs):
-    return _add_counts(dataset, count_rings, info['rings'], n_jobs)

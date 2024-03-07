@@ -10,7 +10,7 @@ def setup_parser()-> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Train a model on a dataset')
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
-    # create the parser for the "fragment" command
+    # create the parser for the "preprocess" command
     parser_fragment = subparsers.add_parser('preprocess', help='Preprocess the dataset for training')
     parser_fragment.add_argument(
         '--data_name', type=str, default = 'ZINC', 
