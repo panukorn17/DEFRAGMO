@@ -6,14 +6,15 @@ from tqdm import tqdm
 from utils.parser_utils import setup_parser
 from utils.config import get_data_info, DATA_DIR
 from utils.mol_utils import mols_from_smiles
-from data.preprocess import read_and_clean_dataset, add_atom_counts, add_bond_counts, add_ring_counts, add_property, add_fragments
+from data.preprocess import read_and_clean_dataset, add_atom_counts, add_bond_counts, add_ring_counts, add_property, add_fragments_defragmo, add_fragments_podda
 
-def preprocess(data_name:str)->None:
+def preprocess(data_name:str, method:str)->None:
     """
     This function is responsible for preprocessing the data which is used to train the VAE model.
 
     Parameters:
     data_name (str): The name of the dataset e.g. ZINC.
+    method (str): The name of the method to fragment the molecules
     """
     data_info = get_data_info(data_name)
     dataset = read_and_clean_dataset(data_info)
@@ -27,9 +28,12 @@ def preprocess(data_name:str)->None:
     for prop in tqdm(data_info['properties']):
         if prop not in dataset.columns:
             dataset = add_property(dataset, mols, prop)
-    dataset = add_fragments(dataset, mols, smiles)
+    if method == 'DEFRAGMO':
+        dataset = add_fragments_defragmo(dataset, mols, smiles)
+    elif method == 'PODDA':
+        dataset = add_fragments_podda(dataset, mols, smiles)
     dataset = dataset[["smiles","fragments","n_fragments","C","F","N","O","Other","SINGLE","DOUBLE","TRIPLE","Tri","Quad","Pent","Hex","logP","mr","qed","SAS"]]
-    dataset.to_csv((DATA_DIR / data_name / 'processed/processed.smi').as_posix(), index=False)
+    dataset.to_csv((DATA_DIR / data_name / f'processed/processed_{method}.smi').as_posix(), index=False)
     
 
 def train_vae(config:Config)->None:
@@ -55,9 +59,9 @@ if __name__ == '__main__':
         simulated_args = [
                     'preprocess',
                     '--data_name', 'ZINC',
-                    '--method', 'DEFRAGMO'
+                    '--method', 'PODDA'
                 ]
-        #python  src/manage.py preprocess --data_name <name_of_dataset> --method <name_of_method>
+        #python  src/manage.py preprocess --data_name ZINC --method DEFRAGMO
         """
         # simulated arguments for model training
         simulated_args = [
@@ -87,7 +91,8 @@ if __name__ == '__main__':
 
     if command == 'preprocess':
         data_name = args.pop('data_name')
-        preprocess(data_name)
+        method = args.pop('method')
+        preprocess(data_name, method)
     if command == 'train':
         config = Config(**args)
         train_vae(config)

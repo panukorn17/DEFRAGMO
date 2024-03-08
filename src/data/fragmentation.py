@@ -1,8 +1,151 @@
 import numpy as np
 
 from rdkit import Chem
+from copy import deepcopy
 from rdkit.Chem import MolToSmiles, MolFromSmiles, BRICS
+from utils.mol_utils import mol_to_smiles, mols_to_smiles, mol_from_smiles
 
+###################### PODDA's Fragmentation functions ######################
+dummy = Chem.MolFromSmiles('[*]')
+
+def strip_dummy_atoms(mol):
+    hydrogen = mol_from_smiles('[H]')
+    mols = Chem.ReplaceSubstructs(mol, dummy, hydrogen, replaceAll=True)
+    mol = Chem.RemoveHs(mols[0])
+    return mol
+
+def count_dummies(mol):
+    count = 0
+    for atom in mol.GetAtoms():
+        if atom.GetAtomicNum() == 0:
+            count += 1
+    return count
+
+def join_molecules(molA, molB):
+    marked, neigh = None, None
+    for atom in molA.GetAtoms():
+        if atom.GetAtomicNum() == 0:
+            marked = atom.GetIdx()
+            neigh = atom.GetNeighbors()[0]
+            break
+    neigh = 0 if neigh is None else neigh.GetIdx()
+
+    if marked is not None:
+        ed = Chem.EditableMol(molA)
+        ed.RemoveAtom(marked)
+        molA = ed.GetMol()
+
+    joined = Chem.ReplaceSubstructs(
+        molB, dummy, molA,
+        replacementConnectionPoint=neigh,
+        useChirality=False)[0]
+
+    #Chem.Kekulize(joined)
+    return joined
+
+def reconstruct(frags, reverse=False):
+    if len(frags) == 1:
+        return strip_dummy_atoms(frags[0]), frags
+
+    try:
+        if count_dummies(frags[0]) != 1:
+            print("yes 1")
+            #print(mol_to_smiles(frags[1]))
+            #print(count_dummies(frags[1]))
+            return None, None
+
+        if count_dummies(frags[-1]) != 1:
+            print("yes 2")
+            return None, None
+
+        for frag in frags[1:-1]:
+            if count_dummies(frag) != 2:
+                print("yes 3")
+                return None, None
+        
+        mol = join_molecules(frags[0], frags[1])
+        for i, frag in enumerate(frags[2:]):
+            print(i, mol_to_smiles(frag), mol_to_smiles(mol))
+            mol = join_molecules(mol, frag)
+            print(i, mol_to_smiles(mol))
+
+        # see if there are kekulization/valence errors
+        mol_to_smiles(mol)
+
+        return mol, frags
+    except Exception:
+        return None, None
+ 
+def break_on_bond(mol, bond, min_length=3):
+    if mol.GetNumAtoms() - bond <= min_length:
+        return [mol]
+
+    broken = Chem.FragmentOnBonds(
+        mol, bondIndices=[bond],
+        dummyLabels=[(0, 0)])
+
+    res = Chem.GetMolFrags(
+        broken, asMols=True, sanitizeFrags=False)
+
+    return res
+
+def get_size(frag):
+    dummies = count_dummies(frag)
+    total_atoms = frag.GetNumAtoms()
+    real_atoms = total_atoms - dummies
+    return real_atoms
+
+def fragment_iterative(mol, min_length=3):
+
+    bond_data = list(BRICS.FindBRICSBonds(mol))
+
+    try:
+        idxs, labs = zip(*bond_data)
+    except Exception:
+        return []
+
+    bonds = []
+    for a1, a2 in idxs:
+        bond = mol.GetBondBetweenAtoms(a1, a2)
+        bonds.append(bond.GetIdx())
+
+    order = np.argsort(bonds).tolist()
+    bonds = [bonds[i] for i in order]
+
+    frags, temp = [], deepcopy(mol)
+    for bond in bonds:
+        res = break_on_bond(temp, bond)
+
+        if len(res) == 1:
+            frags.append(temp)
+            break
+
+        head, tail = res
+        if get_size(head) < min_length or get_size(tail) < min_length:
+            continue
+
+        frags.append(head)
+        temp = deepcopy(tail)
+
+    return frags
+
+def break_into_fragments_podda(mol, smi):
+    frags = fragment_iterative(mol)
+
+    if len(frags) == 0:
+        return smi, np.nan, 0
+
+    if len(frags) == 1:
+        return smi, smi, 1
+
+    rec, frags = reconstruct(frags)
+    if rec and mol_to_smiles(rec) == smi:
+        fragments = mols_to_smiles(frags)
+        return smi, " ".join(fragments), len(frags)
+
+    return smi, np.nan, 0
+
+###################### DEFRAGMO's Fragmentation functions ######################
 def replace_last(s, old, new):
     s_reversed = s[::-1]
     old_reversed = old[::-1]
@@ -39,7 +182,7 @@ def check_reconstruction(frags, frag_1, frag_2, orig_smi):
         #print("Reconstruction failed")
         #print("True Smiles:", smi, "Fragment 1:" , frag_1, "Fragment 2: ", frag_2, "Reconstruction: ", recomb_canon)
         return False
-    
+
 def fragment_recursive(mol_smi_orig, mol_smi, frags, counter, frag_list_len):
     fragComplete = False
     try:
@@ -107,7 +250,7 @@ def fragment_recursive(mol_smi_orig, mol_smi, frags, counter, frag_list_len):
     except Exception:
         pass
 
-def break_into_fragments(mol, smi):
+def break_into_fragments_defragmo(mol, smi):
     #frags = fragment_iterative(mol)
     frags = []
     fragment_recursive(smi, smi, frags, 0, 0)

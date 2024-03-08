@@ -12,7 +12,7 @@ def mol_to_smiles(mol):
     Returns:
     str: The SMILES string of the molecule
     """
-    return Chem.Canonicalize(Chem.MolToSmiles(mol))
+    return canonicalize(Chem.MolToSmiles(mol))
 
 def mol_from_smiles(smiles):
     """

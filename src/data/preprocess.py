@@ -5,7 +5,7 @@ from tqdm import tqdm
 from utils.config import DATA_DIR
 from utils.mol_utils import canonicalize, mols_from_smiles
 from data.molecule_structures import count_atoms, count_bonds, count_rings, qed, sas, logp, mr
-from data.fragmentation import break_into_fragments
+from data.fragmentation import break_into_fragments_defragmo, break_into_fragments_podda
 def read_and_clean_dataset(info):
     raw_path = DATA_DIR / info['name'] / 'raw'
 
@@ -109,7 +109,7 @@ def add_property(dataset:pd.DataFrame, mols:list, prop_name:str)->pd.DataFrame:
     new_data = pd.DataFrame(prop, columns=[prop_name])
     return pd.concat([dataset, new_data], axis=1, sort=False)
 
-def add_fragments(dataset:pd.DataFrame, mols:list, smiles:list)->pd.DataFrame:
+def add_fragments_defragmo(dataset:pd.DataFrame, mols:list, smiles:list)->pd.DataFrame:
     """
     This function adds fragments the modlecules in the dataset dataframe.
 
@@ -121,10 +121,20 @@ def add_fragments(dataset:pd.DataFrame, mols:list, smiles:list)->pd.DataFrame:
     Returns:
     dataset: the dataframe of molecules with fragments
     """
-    results = [break_into_fragments(m, s) for m, s in zip(mols, smiles)]
+    results = [break_into_fragments_defragmo(m, s) for m, s in zip(mols, smiles)]
     smiles, fragments, lengths = zip(*results)
     dataset["smiles"] = smiles
     dataset["fragments"] = fragments
     dataset["n_fragments"] = lengths
     
+    return dataset
+
+
+def add_fragments_podda(dataset:pd.DataFrame, mols:list, smiles:list)->pd.DataFrame:
+    results = [break_into_fragments_podda(m, s) for m, s in zip(mols, smiles)]
+    smiles, fragments, lengths = zip(*results)
+    dataset["smiles"] = smiles
+    dataset["fragments"] = fragments
+    dataset["n_fragments"] = lengths
+
     return dataset
