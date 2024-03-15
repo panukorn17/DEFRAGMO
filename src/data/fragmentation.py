@@ -146,7 +146,18 @@ def break_into_fragments_podda(mol, smi):
     return smi, np.nan, 0
 
 ###################### DEFRAGMO's Fragmentation functions ######################
-def replace_last(s, old, new):
+def replace_last(s: str, old: str, new:str)->str:
+    """
+    Function to replace the last occuring dummy label with a fragment.
+    
+    Parameters:
+    s (str): the string (fragment) to which the dummy label * is to be replaced with another fragment
+    old (str): the string from the fragment s to be replaced
+    new (str): the string to replace the "old" string in the fragment s
+
+    Returns:
+    str: the original string s with the replacemnt
+    """
     s_reversed = s[::-1]
     old_reversed = old[::-1]
     new_reversed = new[::-1]
@@ -159,7 +170,6 @@ def replace_last(s, old, new):
 
 def check_reconstruction(frags, frag_1, frag_2, orig_smi):
     try:
-        #print("Reconstructing...")
         frags_test = frags.copy()
         frags_test.append(frag_1)
         frags_test.append(frag_2)
