@@ -20,6 +20,34 @@ class Vocabulary:
     """
     This class creates a vocabulary of fragments from the data.
     """
+    @classmethod
+    def load(cls, config: Config) -> 'Vocabulary':
+        """
+        This method loads the vocabulary from the config directory.
+
+        Parameters:
+        config (Config): the configuration of the run.
+
+        Returns:
+        Vocabulary: The vocabulary of fragments.
+        """
+        print("Loading the vocabulary...")
+        path = config.path('config')
+        vocab = load_pickle(path / 'vocab.pkl')
+        print(f"Vocabulary loaded from {path}.")
+        return vocab
+
+    def save(self, config: Config) -> None:
+        """
+        This method saves the vocabulary to the config directory.
+
+        Parameters:
+        config (Config): the configuration of the run.
+        """
+        print("Saving the vocabulary...")
+        path = config.path('config')
+        save_pickle(self, path / 'vocab.pkl')
+        print(f"Vocabulary saved to {path}.")
 
     def __init__(self, config: Config, data:pd.DataFrame):
         """
@@ -35,6 +63,8 @@ class Vocabulary:
         self.w2i = w2i
         self.i2w = i2w
         self.size = len(w2i)
+
+        self.save(config)
     
     def get_size(self) -> int:
         """
