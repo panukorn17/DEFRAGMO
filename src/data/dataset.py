@@ -152,7 +152,11 @@ class MoleculeFragmentsDataset(Dataset):
         """
         start = time.time()
         if self.vocab is None:
-            self.vocab = Vocabulary(self.config, self.data)
+            try:
+                self.vocab = Vocabulary.load(self.config)
+            except FileNotFoundError:
+                print("Vocabulary not found. Creating a new one.")
+                self.vocab = Vocabulary(self.config, self.data)
         end = time.time()
         formatted_time = time.strftime('%H:%M:%S', time.gmtime(end - start))
         print(f"Time elapsed to set the vocabulary: {formatted_time}.")
