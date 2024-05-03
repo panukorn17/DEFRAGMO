@@ -1,5 +1,6 @@
 from data.dataset import MoleculeFragmentsDataset
 from training.vae_trainer import VAETrainer
+from models.vae_sampler import Sampler
 from utils.config import Config
 from tqdm import tqdm
 
@@ -49,6 +50,22 @@ def train_vae(config:Config)->None:
     trainer = VAETrainer(config, vocab)
     trainer.train(dataset.get_loader(), start_epoch=0)
 
+def sample_model(config):
+    dataset = MoleculeFragmentsDataset(config)
+    vocab = dataset.set_vocab()
+    load_last = config.get('load_last')
+    trainer, epoch = VAETrainer.load(config, vocab, last=load_last)
+    sampler = Sampler(config, vocab, trainer.model)
+    seed = config.get('sampling_seed') if config.get('reproduce') else None
+    samples = sampler.sample(config.get('num_samples'), seed=seed)
+    """
+    dataset = load_dataset(config, kind="test")
+    _, scores = score_samples(samples, dataset)
+    is_max = dump_scores(config, scores, epoch)
+    if is_max:
+        save_ckpt(trainer, epoch, filename=f"best.pt")
+    config.save()
+    """
 if __name__ == '__main__':
     debug = False
     if debug:
@@ -56,11 +73,11 @@ if __name__ == '__main__':
         parser = setup_parser()
 
         # simulated arguments for preprocessing
-        simulated_args = [
+        """simulated_args = [
                     'preprocess',
                     '--data_name', 'ZINC',
                     '--method', 'PODDA'
-                ]
+                ]"""
         #python  src/manage.py preprocess --data_name ZINC --method DEFRAGMO
         """
         # simulated arguments for model training
@@ -79,8 +96,19 @@ if __name__ == '__main__':
                     '--pred_sas'
                 ]
         """
+        # simulated arguments for sampling
+        simulated_args = [
+                'sample',
+                '--run_dir', 'src/runs/2024-05-03-10-57-34-ZINC'
+                ]
         # parse the arguments and create a dictionary of the arguments
         args = vars(parser.parse_args(simulated_args))
+        # get the command and remove it from the dictionary
+        command = args.pop('command')
+        if command == 'sample':
+            run_dir = args.pop('run_dir')
+            config = Config.load(run_dir, **args)
+            sample_model(config)
     else: 
         # parse the arguments and call the function
         parser = setup_parser()
