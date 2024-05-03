@@ -38,6 +38,13 @@ DEFAULT_EXPT_PARAMS = {
     'sched_step_size': 2,
     'sched_gamma': 0.1,
     'clip_norm': 5.0,
+
+    # Sampling
+    'load_last': False,
+    'num_samples': 100,
+    'max_len': 10,
+    'temperature': 1.0,
+    'sampling_seed': None,
     }
 
 class Config:
@@ -116,7 +123,7 @@ class Config:
         """
         # save the config to the run directory as a pickle file
         path = Path(self.paths['config']) / self.FILENAME
-        save_pickle(self.params, path)
+        save_pickle(self, path)
 
         # save the config to the run directory as a json file
         json_path = Path(self.paths['config']) / self.JSON_FILENAME

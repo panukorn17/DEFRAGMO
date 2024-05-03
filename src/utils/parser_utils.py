@@ -92,4 +92,25 @@ def setup_parser()-> argparse.ArgumentParser:
         '--clip_norm',
         default=5.0, type=float,
         help='threshold to clip the gradient norm')
+    
+    # create the parser for the "sample" command
+    parser_sample = subparsers.add_parser('sample', help='Sample from the vae model')
+    parser_sample.add_argument(
+        '--run_dir', metavar="FOLDER",
+        help="directory of the run to resume")
+    parser_sample.add_argument(
+        '--load_last', action="store_true",
+        help='load last model instead of best')
+    parser_sample.add_argument(
+        '--num_samples',
+        default=20000, type=int,
+        help='number of samples to draw from the model')
+    parser_sample.add_argument(
+        '--max_length',
+        default=10, type=int,
+        help='maximum length of the sampled sequence')
+    parser_sample.add_argument(
+        '--temperature',
+        default=1.0, type=float,
+        help='sampling temperature')
     return parser
