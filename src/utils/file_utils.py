@@ -61,4 +61,5 @@ def load_data(config, data_type):
     assert data_type in ['train', 'test']
     data_path = config.path('data') / f'{data_type}.smi'
     data = pd.read_csv(data_path).reset_index(drop=True)
+    data = data[data['n_fragments']>1].reset_index(drop=True)
     return data
