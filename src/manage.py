@@ -1,3 +1,4 @@
+from datetime import datetime
 from data.dataset import MoleculeFragmentsDataset
 from training.vae_trainer import VAETrainer
 from models.vae_sampler import Sampler
@@ -51,23 +52,21 @@ def train_vae(config:Config)->None:
     trainer.train(dataset.get_loader(), start_epoch=0)
 
 def sample_model(config):
+    # get date and time
+    date_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     dataset = MoleculeFragmentsDataset(config)
     vocab = dataset.set_vocab()
     load_last = config.get('load_last')
-    trainer, epoch = VAETrainer.load(config, vocab, last=load_last)
+    trainer, _ = VAETrainer.load(config, vocab, last=load_last)
     sampler = Sampler(config, vocab, trainer.model)
-    seed = config.get('sampling_seed') if config.get('reproduce') else None
-    samples = sampler.sample(config.get('num_samples'), seed=seed)
-    """
-    dataset = load_dataset(config, kind="test")
-    _, scores = score_samples(samples, dataset)
-    is_max = dump_scores(config, scores, epoch)
-    if is_max:
-        save_ckpt(trainer, epoch, filename=f"best.pt")
-    config.save()
-    """
+    #seed = config.get('sampling_seed') if config.get('reproduce') else None
+    samples = sampler.sample(config.get('num_samples'))
+    with open(config.path('results') / (date_time + "_samples.smi"), 'w') as f:
+        for sample in samples:
+            f.write(sample + '\n')
+    
 if __name__ == '__main__':
-    debug = False
+    debug = True
     if debug:
         # parse the arguments and call the function
         parser = setup_parser()
@@ -99,7 +98,9 @@ if __name__ == '__main__':
         # simulated arguments for sampling
         simulated_args = [
                 'sample',
-                '--run_dir', 'src/runs/2024-05-03-10-57-34-ZINC'
+                '--run_dir', 'src/runs/2024-05-03-11-05-40-ZINC',
+                '--sampler_method', 'sample_all',
+                '--load_last'
                 ]
         # parse the arguments and create a dictionary of the arguments
         args = vars(parser.parse_args(simulated_args))
@@ -107,6 +108,7 @@ if __name__ == '__main__':
         command = args.pop('command')
         if command == 'sample':
             run_dir = args.pop('run_dir')
+            args.update({'use_gpu': False})
             config = Config.load(run_dir, **args)
             sample_model(config)
     else: 
@@ -124,3 +126,8 @@ if __name__ == '__main__':
     if command == 'train':
         config = Config(**args)
         train_vae(config)
+    if command == 'sample':
+        run_dir = args.pop('run_dir')
+        args.update({'use_gpu': False})
+        config = Config.load(run_dir, **args)
+        sample_model(config)
