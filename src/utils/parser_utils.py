@@ -103,12 +103,17 @@ def setup_parser()-> argparse.ArgumentParser:
         help='load last model instead of best')
     parser_sample.add_argument(
         '--num_samples',
-        default=20000, type=int,
+        default=1000, type=int,
         help='number of samples to draw from the model')
     parser_sample.add_argument(
         '--max_length',
         default=10, type=int,
         help='maximum length of the sampled sequence')
+    parser_sample.add_argument(
+        '--sampler_method', 
+        default='greedy', type=str,
+        choices=['greedy', 'sample_first', 'sample_all'],
+        help='sampling method')
     parser_sample.add_argument(
         '--temperature',
         default=1.0, type=float,
