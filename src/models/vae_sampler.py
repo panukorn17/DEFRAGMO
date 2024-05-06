@@ -1,3 +1,95 @@
+import torch 
+import torch.nn.functional as F
+from torch.autograd import Variable
+import numpy as np
+import time
+import itertools
+
+from rdkit import Chem
+from rdkit.Chem import MolToSmiles, MolFromSmiles
+from utils.mol_utils import mol_to_smiles, mols_to_smiles, mols_from_smiles, mol_from_smiles
+from data.fragmentation import replace_last
+def remove_consecutive(fragments):
+    return [i for i, _ in itertools.groupby(fragments)]
+
+def reconstruct(frags):
+    try:
+        frags_test = frags.copy()
+        frag_2_re = frags_test[-1]
+        for i in range(len(frags_test)-1):
+            frag_1_re = frags_test[-1*i-2]
+            recomb = replace_last(frag_2_re, "*", frag_1_re.replace("*", "",1))
+            recomb_canon = MolToSmiles(MolFromSmiles(Chem.CanonSmiles(recomb)),rootedAtAtom = 1)
+            frag_2_re = recomb_canon
+        #print("Reconstruction successful")
+        return MolFromSmiles(Chem.CanonSmiles(recomb)), frags
+    except:
+        #print("Reconstruction failed")
+        return None, None
+
+def generate_molecules(samples, vocab, check_eos=False):
+    result = []
+    num_samples = samples.shape[0]
+    if check_eos:
+        running_check = [False] * num_samples
+
+    for idx in range(num_samples):
+        frag_smiles = vocab.translate(samples[idx, :])
+        frag_smiles = remove_consecutive(frag_smiles)
+        #print(frag_smiles)
+
+        if len(frag_smiles) <= 1:
+            if check_eos:
+                running_check[idx] = True
+                if idx == len(running_check)-1:
+                    return running_check
+                else:
+                    continue
+            continue
+
+        try:
+            frag_mols = mols_from_smiles(frag_smiles)
+            mol, frags = reconstruct(frag_smiles)
+            #print(mol)
+            if mol is not None:
+                smiles = mol_to_smiles(mol)
+                if check_eos:
+                    # count the number of "*" in smiles
+                    count = sum(1 for c in smiles if c == '*')
+                    if count > 0 and idx < len(running_check):
+                        running_check[idx] = True
+                        if idx == len(running_check)-1:
+                            return running_check
+                        else:
+                            continue
+                    elif count == 0 and idx < len(running_check):
+                        running_check[idx] = False
+                        if idx == len(running_check)-1:
+                            return running_check
+                        else:
+                            continue
+                num_frags = len(frags)
+                frags = " ".join(frags)
+                result.append((smiles, frags, num_frags))
+            else:
+                if check_eos:
+                    running_check[idx] = True
+                    if idx == len(running_check)-1:
+                        return running_check
+                    else:
+                        continue
+                continue
+        except Exception:
+            if check_eos:
+                running_check[idx] = True
+                if idx == len(running_check)-1:
+                    return running_check
+                else:
+                    continue
+            continue
+
+    return result
+
 class Sampler:
     """
     A class to sample from the VAE model.
@@ -6,3 +98,160 @@ class Sampler:
         self.config = config
         self.vocab = vocab
         self.model = model
+    
+    def sample(self, num_samples):
+        """
+        Sample from the VAE model.
+        """
+        self.model = self.model.cpu()
+        self.model.eval()
+        vocab = self.vocab
+
+        hidden_layers = self.model.hidden_layers
+        hidden_size = self.model.hidden_size
+
+        def row_filter(row):
+            return (row == vocab.EOS).any()
+        
+        count = 0
+        total_time = 0
+        batch_size = 100
+        sample_std = 1
+        samples, sampled = [], 0
+
+        max_length = self.config.get('max_len')
+        temperature = self.config.get('temperature')
+        sample_method = self.config.get('sampler_method')
+
+        with torch.no_grad():
+            while len(samples) < num_samples:
+                start = time.time()
+
+                # sample vector from latent space
+                z = torch.normal(0, sample_std, size=(batch_size, self.model.latent_size)).cpu()
+                #z = self.model.encoder.sample_normal(batch_size)
+
+                generated = self.sample_from_latent(z, hidden_layers, hidden_size, batch_size, max_length, temperature, sample_method, vocab)
+
+                new_samples = generated.numpy()
+                #print(new_samples)
+                mask = np.apply_along_axis(row_filter, 1, new_samples)
+
+                #check if any sequence is finished
+                result = generate_molecules(new_samples[mask], vocab)
+                samples.extend(result)
+
+                end = time.time() - start
+                total_time += end
+
+                if len(samples) > sampled:
+                    sampled = len(samples)
+                    count = 0 
+                else: 
+                    count += 1
+
+                if len(samples) % 100 == 0:
+                    elapsed = time.strftime("%H:%M:%S", time.gmtime(end))
+                    print(f'Sampled {len(samples)} molecules. '
+                          f'Time elapsed: {elapsed}')
+
+                if count >= 1000000:
+                    break
+
+        return samples
+    
+    def sample_from_latent(self, z, hidden_layers, hidden_size, batch_size, max_length, temperature, sample_method, vocab):
+        # get the initial state
+        state = self.model.latent2hidden(z)
+        state = state.view(hidden_layers, batch_size, hidden_size)
+
+        # all idx of batch
+        sequence_idx = torch.arange(0, batch_size).long()
+
+        # all idx of batch which are still generating
+        running = torch.arange(0, batch_size).long()
+        sequence_mask = torch.ones(batch_size, dtype=torch.bool)
+
+        # idx of still generating sequences
+        # with respect to current loop
+        running_seqs = torch.arange(0, batch_size).long()
+        lengths = [1] * batch_size
+
+        generated = torch.Tensor(batch_size, max_length).long()
+        generated.fill_(vocab.PAD)
+
+        inputs = Variable(torch.Tensor(batch_size).long())
+        inputs.fill_(vocab.SOS).long()
+
+        step = 0
+
+        while(step < max_length and len(running_seqs) > 0):
+            inputs = inputs.unsqueeze(1)
+            emb = self.model.embedder(inputs)
+            scores, state = self.model.decoder(emb, state, lengths)
+            scores = scores.squeeze(1)
+
+            probs = F.softmax(scores / temperature, dim=1)
+            
+            if sample_method == 'greedy':
+                # argmax
+                inputs = torch.argmax(probs, 1).reshape(1, -1)
+            elif sample_method == 'sample_first':
+                # test sampling first token
+                if step == 0:
+                    inputs = torch.multinomial(probs, 1, replacement = True).reshape(1, -1)
+                else:
+                    inputs = torch.argmax(probs, 1).reshape(1, -1)
+            elif sample_method == 'sample_all': 
+                # sample unless the argmax sample is EOS
+                inputs = torch.argmax(probs, 1).reshape(1, -1)
+                inputs[inputs!=vocab.EOS] = torch.multinomial(probs[(inputs!=vocab.EOS)[0]], 1).reshape(1, -1)
+            if (inputs == vocab.EOS).any():
+                # global running sequences to check
+                sequence_mask_check = torch.ones(batch_size, dtype=torch.bool)
+                sequence_mask_check[running] = (inputs == vocab.EOS)
+                running_check = running.masked_select(sequence_mask_check[running])
+                # check reconstruction
+                sequence_mask_check_recon = generate_molecules(generated[running_check].numpy(), vocab, check_eos=True)
+                # update the global running sequences
+                sequence_mask_check[running_check] = torch.tensor(sequence_mask_check_recon)
+                # update local running sequences to resample
+                running_mask_check = torch.arange(0, len(probs)).long()
+                # resample if sequence_mask_check_recon is False
+                running_resample = running_mask_check.masked_select(sequence_mask_check[running])
+                # check the second highest prob for each index by running_resample
+                _, indices = torch.topk(probs[running_resample], 2, dim=1)
+                # replace the EOS token with the second highest prob
+                inputs[0, running_resample] = indices[:, 1]
+            # save next input
+            generated = self.update(generated, inputs, running, step)
+            # update global running sequence
+            sequence_mask[running] = (inputs != vocab.EOS)
+            # check reconstruction when EOS is generated
+            running = sequence_idx.masked_select(sequence_mask)
+
+            # update local running sequences
+            running_mask = (inputs != vocab.EOS)
+            running_seqs = running_seqs.masked_select(running_mask)
+
+            # prune input and hidden state according to local update
+            run_length = len(running_seqs)
+            if run_length > 0:
+                inputs = inputs.squeeze(0)
+                inputs = inputs[running_seqs]
+                state = state[:, running_seqs]
+                running_seqs = torch.arange(0, run_length).long()
+
+            lengths = [1] * run_length
+            step += 1
+        return generated
+
+    def update(self, save_to, sample, running_seqs, step):
+        # select only still running
+        running_latest = save_to[running_seqs]
+        # update token at step position
+        running_latest[:, step] = sample.data
+        # save back
+        save_to[running_seqs] = running_latest
+
+        return save_to
