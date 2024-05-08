@@ -92,6 +92,23 @@ def setup_parser()-> argparse.ArgumentParser:
         '--clip_norm',
         default=5.0, type=float,
         help='threshold to clip the gradient norm')
+    parser_train.add_argument(
+        '--embed_method',
+        default='mol2vec', type=str,
+        choices=['mol2vec', 'skipgram'],
+        help='window for word2vec embedding')    
+    parser_train.add_argument(
+        '--embed_window',
+        default=3, type=int,
+        help='window for word2vec embedding')
+    parser_train.add_argument(
+        '--use_mask', dest='use_mask',
+        action='store_true',
+        help="use mask for low-frequency fragments")
+    parser_train.add_argument(
+        '--mask_freq',
+        type=int, default=2,
+        help="masking frequency")
     
     # create the parser for the "sample" command
     parser_sample = subparsers.add_parser('sample', help='Sample from the vae model')
