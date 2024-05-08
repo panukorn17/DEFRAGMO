@@ -58,8 +58,13 @@ class Vocabulary:
         data (pd.DataFrame) [feature_length, number_of_molecules]: the source of the full dataset
         """
         self.config = config
+        self.use_mask = config.get('use_mask')
         self.pretrained_model = self.load_model()
-        w2i, i2w = self.get_embeddings(self.config, data)
+        self.embed_method = config.get('embed_method')
+        if self.embed_method == 'mol2vec':
+            w2i, i2w = self.get_embeddings(self.config, data)
+        elif self.embed_method == 'skipgram':
+            w2i, i2w = self.train_embeddings(self.config, data)
         self.w2i = w2i
         self.i2w = i2w
         self.size = len(w2i)
@@ -189,6 +194,54 @@ class Vocabulary:
         end = time.time()
         formatted_time = time.strftime('%H:%M:%S', time.gmtime(end - start))
         print(f"Time elapsed to get the embeddings: {formatted_time}.")
+        return w2i, i2w
+    
+    def train_embeddings(self, config, data):
+        start = time.time()
+        print("Training and clustering embeddings...", end=" ")
+        
+        embed_size = config.get('embed_size')
+        embed_window = config.get('embed_window')
+        mask_freq = config.get('mask_freq')
+        use_mask = config.get('use_mask')
+        
+        i2w_infreq = None
+        w2w_infreq = None
+        c2w_infreq = None
+        start_idx = len(TOKENS)
+
+        if use_mask:
+            print("skipped...")
+        else:
+            data = [s.split(" ") for s in data.fragments]
+        
+        # Initialise the dictionaries with the special tokens
+        w2i = {token: i for i, token in enumerate(TOKENS)}
+        i2w = {i: token for i, token in enumerate(TOKENS)}
+
+        w2v = Word2Vec(
+                data,
+                vector_size=embed_size,
+                window=embed_window,
+                min_count=1,
+                negative=5,
+                workers=20,
+                epochs=10,
+                sg=1)
+
+        key_to_index = w2v.wv.key_to_index
+        w2i.update({k: v + start_idx for k, v in key_to_index.items()})
+        i2w = {v: k for (k, v) in w2i.items()}
+        # Extract embeddings for all words in the vocabulary
+        vocab_embeddings = np.array([w2v.wv[key] for key in w2v.wv.index_to_key])
+        tokens = np.random.uniform(-0.05, 0.05, size=(start_idx, embed_size))
+        embeddings = np.vstack([tokens, vocab_embeddings])
+        path = config.path('config') / f'emb_{embed_size}.dat'
+        np.savetxt(path, embeddings, delimiter=",")
+
+        end = time.time() - start
+        elapsed = time.strftime("%H:%M:%S", time.gmtime(end))
+        print(f'Done. Time elapsed: {elapsed}.')
         return w2i, i2w
 
     def load_model(self) -> Word2Vec:
