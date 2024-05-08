@@ -121,7 +121,8 @@ def add_fragments_defragmo(dataset:pd.DataFrame, mols:list, smiles:list)->pd.Dat
     Returns:
     dataset: the dataframe of molecules with fragments
     """
-    results = [break_into_fragments_defragmo(m, s) for m, s in zip(mols, smiles)]
+    results = [break_into_fragments_defragmo(m, s) for m, s in tqdm(zip(mols, smiles), total=len(mols), desc="Processing molecules")]
+    #results = [break_into_fragments_defragmo(m, s) for m, s in zip(mols, smiles)]
     smiles, fragments, lengths = zip(*results)
     dataset["smiles"] = smiles
     dataset["fragments"] = fragments
