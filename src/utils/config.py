@@ -39,6 +39,13 @@ DEFAULT_EXPT_PARAMS = {
     'sched_gamma': 0.1,
     'clip_norm': 5.0,
 
+    # Fragment Embedding
+    'embed_method': 'mol2vec',
+    'embed_window': 3,
+    'use_mask': False,
+    'mask_freq':2,
+
+
     # Sampling
     'load_last': False,
     'num_samples': 100,
