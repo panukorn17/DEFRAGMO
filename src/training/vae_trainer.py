@@ -70,8 +70,11 @@ class VAETrainer:
         penalty_weights = self.get_fragment_penalty_weights(dataset)
 
         # initialise the beta values for KL annealing
-        beta = [0, 0, 0, 0, 0, 0.002, 0.006, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1, 1]
-        #beta = [0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.2, 0.3, 0.5, 0.5]
+        #beta = [0, 0, 0, 0, 0, 0.002, 0.006, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1, 1]
+        #beta = [0, 0.001, 0.1, 0.6, 1]
+        #beta = [0, 0.01, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1, 1]
+        # beta for not summing fingerprints
+        beta = [0.9, 0.9, 0.9, 0.9]
         print('beta:', beta)
         self.beta_list = beta
 
