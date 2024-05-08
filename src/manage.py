@@ -63,10 +63,11 @@ def sample_model(config):
     samples = sampler.sample(config.get('num_samples'))
     with open(config.path('results') / (date_time + "_samples.smi"), 'w') as f:
         for sample in samples:
-            f.write(sample + '\n')
+            sample_str = ' '.join(map(str, sample))
+            f.write(sample_str + '\n')
     
 if __name__ == '__main__':
-    debug = True
+    debug = False
     if debug:
         # parse the arguments and call the function
         parser = setup_parser()
@@ -78,12 +79,12 @@ if __name__ == '__main__':
                     '--method', 'PODDA'
                 ]"""
         #python  src/manage.py preprocess --data_name ZINC --method DEFRAGMO
-        """
+        
         # simulated arguments for model training
         simulated_args = [
                     'train',
                     '--data_name', 'ZINC',
-                    '--num_epochs', '15',
+                    '--num_epochs', '5',
                     '--batch_size', '16',
                     '--embed_size', '100',
                     '--hidden_layers', '2',
@@ -94,19 +95,28 @@ if __name__ == '__main__':
                     '--pred_logp',
                     '--pred_sas'
                 ]
-        """
+        
         # simulated arguments for sampling
+        """
         simulated_args = [
                 'sample',
                 '--run_dir', 'src/runs/2024-05-03-11-05-40-ZINC',
                 '--sampler_method', 'sample_all',
                 '--load_last'
                 ]
+        """
         # parse the arguments and create a dictionary of the arguments
         args = vars(parser.parse_args(simulated_args))
         # get the command and remove it from the dictionary
         command = args.pop('command')
-        if command == 'sample':
+        if command == 'preprocess':
+            data_name = args.pop('data_name')
+            method = args.pop('method')
+            preprocess(data_name, method)
+        elif command == 'train':
+            config = Config(**args)
+            train_vae(config)
+        elif command == 'sample':
             run_dir = args.pop('run_dir')
             args.update({'use_gpu': False})
             config = Config.load(run_dir, **args)
