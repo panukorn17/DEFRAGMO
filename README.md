@@ -31,11 +31,23 @@ To use our fragmentation algorithm, replace `<name_of_method>` with `DEFRAGMO`, 
 ### Training the model
 To train the model run the following command:
 ```bash
-python  src/manage.py train --data_name <name_of_dataset> --use_gpu --batch_size <size_of_batch> --embed_size <embedding_size> --num_epochs <number_of_epochs> --hidden_layers <number_of_hidden_layers> --hidden_size <hidden_size> --latent_size <latent_size> --pooling <pooling_method> --pred_sas --pred_logp
+python  src/manage.py train --data_name <name_of_dataset> --use_gpu --batch_size <size_of_batch> --embed_size <embedding_size> --num_epochs <number_of_epochs> --hidden_layers <number_of_hidden_layers> --hidden_size <hidden_size> --latent_size <latent_size> --pooling <pooling_method> --pred_sas --pred_logp --embed_method <method_of_embedding>
 ```
-To get the full list of hyperparameters that can be altered, `run python src/manage.py train --help`. Note that currently, the **embedding_size has to be 100** as we are using the pretrained mol2vec embeddings.
+To get the full list of hyperparameters that can be altered, `run python src/manage.py train --help`. For the embed method, the choices are **mol2vec** (default) or **skipgram** which learns embeddings using a skipgram model using word2vec. Note that if we are using mol2vec embeddings, the **embedding_size has to be 100**.
 
 #### Pooling method
 The original paper did not implement a pooling method for the encoder. To leave the model training under this setting, remove `--pooling <pooling_method>` from the training command (Figure (a)). For our paper, we summed the fingerprint embeddings of each fragment. To implement this model, add `--pooling sum_fingerprints` to the training command (Figure (b)). We've also implemented mean pooling (`--pooling mean`) and max pooling (`--pooling max`) as detailed by [Long et al. (2020)](https://arxiv.org/pdf/1911.03976.pdf) to prevent posterior collapse.
+
+### Sampling from the model
+To sample from the model run the following command:
+```bash
+python  src/manage.py sample --run_dir <directory_of_the_run> --load_last --num_samples <number_of_samples> --max_length <max_length> --sampler_method <method_of_sampling> --temperature <temperature>
+```
+1. `<directory_of_the_run>` e.g. src/runs/2024-05-03-11-05-40-ZINC.
+2. `load_last` load the last epoch of the model. Omit this argument and the epoch with the best lost will be loaded.
+3. `<number_of_samples>` e.g. 1000
+4. `<max_length>` is the maximum tokens to sample. Default is 10.
+5. `<method_of_sampling>` is the sampling method. Choices are greedy (default, sampling greedily from the latent space), sample_first (sample the first token from the distribution and then sampling the rest of the tokens greedily), sample_all (sampling all the tokens except for the EOS token which is greedy).
+6. `<temperature>` is the sampling temperature. Default is 1.
 
 ![Model Architecture](images/model_architecture_pooling.png)
