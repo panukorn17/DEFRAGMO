@@ -3,3 +3,5 @@
 src/test.py
 src/runs/*
 notebooks/*
+images/ZINC/*
+src/calculate_mean_std.ipynb
