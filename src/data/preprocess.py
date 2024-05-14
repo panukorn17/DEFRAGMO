@@ -139,3 +139,15 @@ def add_fragments_podda(dataset:pd.DataFrame, mols:list, smiles:list)->pd.DataFr
     dataset["n_fragments"] = lengths
 
     return dataset
+
+def save_dataset(dataset, info):
+    """
+    split to train and test set and save the dataset to the processed folder
+    """
+    dataset = dataset[info['column_order']]
+    testset = dataset[dataset.fragments.notnull()]
+    trainset = testset[testset.n_fragments >= info['min_length']]
+    trainset = trainset[trainset.n_fragments <= info['max_length']]
+    processed_path = DATA_DIR / info['name'] / 'PROCESSED'
+    trainset.to_csv(processed_path / 'train.smi', index=False)
+    dataset.to_csv(processed_path / 'test.smi', index=False)
