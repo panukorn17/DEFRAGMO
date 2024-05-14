@@ -38,6 +38,7 @@ DEFAULT_EXPT_PARAMS = {
     'sched_step_size': 2,
     'sched_gamma': 0.1,
     'clip_norm': 5.0,
+    'beta': None,
 
     # Fragment Embedding
     'embed_method': 'mol2vec',
@@ -52,7 +53,8 @@ DEFAULT_EXPT_PARAMS = {
     'max_len': 10,
     'temperature': 1.0,
     'sampling_seed': None,
-    'sampler_method': 'greedy'
+    'sampler_method': 'greedy',
+    'sample_repeat': None
     }
 
 class Config:
