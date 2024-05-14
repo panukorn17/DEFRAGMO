@@ -1,3 +1,5 @@
+import pandas as pd
+
 from datetime import datetime
 from data.dataset import MoleculeFragmentsDataset
 from training.vae_trainer import VAETrainer
@@ -5,11 +7,12 @@ from models.vae_sampler import Sampler
 from utils.config import Config
 from tqdm import tqdm
 
+from utils.file_utils import load_data
 from utils.parser_utils import setup_parser
 from utils.config import get_data_info, DATA_DIR
 from utils.mol_utils import mols_from_smiles
-from data.preprocess import read_and_clean_dataset, add_atom_counts, add_bond_counts, add_ring_counts, add_property, add_fragments_defragmo, add_fragments_podda
-
+from data.preprocess import read_and_clean_dataset, add_atom_counts, add_bond_counts, add_ring_counts, add_property, add_fragments_defragmo, add_fragments_podda, save_dataset
+from data.postprocess import score_samples
 def preprocess(data_name:str, method:str)->None:
     """
     This function is responsible for preprocessing the data which is used to train the VAE model.
@@ -36,6 +39,7 @@ def preprocess(data_name:str, method:str)->None:
         dataset = add_fragments_podda(dataset, mols, smiles)
     dataset = dataset[["smiles","fragments","n_fragments","C","F","N","O","Other","SINGLE","DOUBLE","TRIPLE","Tri","Quad","Pent","Hex","logP","mr","qed","SAS"]]
     dataset.to_csv((DATA_DIR / data_name / f'processed/processed_{method}.smi').as_posix(), index=False)
+    save_dataset(dataset, data_info)
     
 
 def train_vae(config:Config)->None:
@@ -58,13 +62,17 @@ def sample_model(config):
     vocab = dataset.set_vocab()
     load_last = config.get('load_last')
     trainer, _ = VAETrainer.load(config, vocab, last=load_last)
-    sampler = Sampler(config, vocab, trainer.model)
+    std = 1
+    sampler = Sampler(config, vocab, trainer.model, std)
     #seed = config.get('sampling_seed') if config.get('reproduce') else None
-    samples = sampler.sample(config.get('num_samples'))
-    with open(config.path('results') / (date_time + "_samples.smi"), 'w') as f:
-        for sample in samples:
-            sample_str = ' '.join(map(str, sample))
-            f.write(sample_str + '\n')
+    samples_tup = sampler.sample(config.get('num_samples'))
+    # update list of tuples (smiles, frags, num_frags) to df
+    samples_list = [(smi, frags, num_frags) for smi, frags, num_frags in samples_tup]
+    samples_df = pd.DataFrame(samples_list, columns=['smiles', 'fragments', 'n_fragments'])
+    samples_df.to_csv(config.path('results') / (date_time + f"_std_{std}_samples.smi"), index=False)
+    dataset = load_data(config, data_type="test")
+    scores = score_samples(samples_df, dataset)
+    print(f"Scores: {scores}")
     
 if __name__ == '__main__':
     debug = False
@@ -81,7 +89,7 @@ if __name__ == '__main__':
         #python  src/manage.py preprocess --data_name ZINC --method DEFRAGMO
         
         # simulated arguments for model training
-        simulated_args = [
+        """simulated_args = [
                     'train',
                     '--data_name', 'ZINC',
                     '--num_epochs', '5',
@@ -94,17 +102,17 @@ if __name__ == '__main__':
                     '--use_gpu',
                     '--pred_logp',
                     '--pred_sas'
-                ]
+                ]"""
         
         # simulated arguments for sampling
-        """
         simulated_args = [
                 'sample',
-                '--run_dir', 'src/runs/2024-05-03-11-05-40-ZINC',
-                '--sampler_method', 'sample_all',
-                '--load_last'
+                '--run_dir', 'src/runs/2024-05-14-00-18-21-ZINC',
+                '--sampler_method', 'greedy',
+                '--load_last',
+                '--num_samples', '100',
+                '--max_len', '10'
                 ]
-        """
         # parse the arguments and create a dictionary of the arguments
         args = vars(parser.parse_args(simulated_args))
         # get the command and remove it from the dictionary
@@ -126,18 +134,18 @@ if __name__ == '__main__':
         parser = setup_parser()
         args = vars(parser.parse_args())
         
-    # get the command and remove it from the dictionary
-    command = args.pop('command')
+        # get the command and remove it from the dictionary
+        command = args.pop('command')
 
-    if command == 'preprocess':
-        data_name = args.pop('data_name')
-        method = args.pop('method')
-        preprocess(data_name, method)
-    if command == 'train':
-        config = Config(**args)
-        train_vae(config)
-    if command == 'sample':
-        run_dir = args.pop('run_dir')
-        args.update({'use_gpu': False})
-        config = Config.load(run_dir, **args)
-        sample_model(config)
+        if command == 'preprocess':
+            data_name = args.pop('data_name')
+            method = args.pop('method')
+            preprocess(data_name, method)
+        if command == 'train':
+            config = Config(**args)
+            train_vae(config)
+        if command == 'sample':
+            run_dir = args.pop('run_dir')
+            args.update({'use_gpu': False})
+            config = Config.load(run_dir, **args)
+            sample_model(config)
