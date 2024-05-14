@@ -7,7 +7,7 @@ from utils.mol_utils import mol_to_smiles, mols_to_smiles, mol_from_smiles
 from rdkit import RDLogger
 
 # Suppress all RDKit warnings and errors
-#RDLogger.DisableLog('rdApp.*')
+RDLogger.DisableLog('rdApp.*')
 ###################### PODDA's Fragmentation functions ######################
 dummy = Chem.MolFromSmiles('[*]')
 
@@ -97,6 +97,9 @@ def get_size(frag):
     total_atoms = frag.GetNumAtoms()
     real_atoms = total_atoms - dummies
     return real_atoms
+
+def get_dummy_count(frag):
+    return count_dummies(frag)
 
 def fragment_iterative(mol, min_length=1):
 
@@ -211,7 +214,8 @@ def check_bond_no(bonds:list, frags:list, frag_list_len:int, smi:str)->tuple:
         - frags (list): the list of fragments
         - fragComplete (bool): a boolean value to indicate whether fragmentation is complete
     """
-    if len(bonds) <= frag_list_len:
+    if (len(bonds) <= frag_list_len):
+        print("Final Fragment: ", smi)
         frags.append(MolToSmiles(MolFromSmiles(Chem.CanonSmiles(smi)), rootedAtAtom=1))
         fragComplete = True
         return frags, fragComplete
@@ -219,7 +223,7 @@ def check_bond_no(bonds:list, frags:list, frag_list_len:int, smi:str)->tuple:
         fragComplete = False
         return frags, fragComplete
 
-def fragment_recursive(mol_smi_orig:str, mol_smi:str, frags:list, counter:int, frag_list_len:int, min_length:int=3)->list:
+def fragment_recursive(mol_smi_orig:str, mol_smi:str, frags:list, counter:int, frag_list_len:int, min_length:int=0)->list:
     """
     This recursive function fragments a molecule using the DEFRAGMO fragmentation method.
 
@@ -264,12 +268,15 @@ def fragment_recursive(mol_smi_orig:str, mol_smi:str, frags:list, counter:int, f
                 head_smi = Chem.CanonSmiles(MolToSmiles(head))
                 tail_smi = MolToSmiles(MolFromSmiles(Chem.CanonSmiles(MolToSmiles(tail))), rootedAtAtom=1)
                 if check_reconstruction(frags, head_smi, tail_smi, mol_smi_orig) & (get_size(head) >= min_length):
+                    print("Head fragment: ", head_smi)
+                    print("Recurse tail: ", tail_smi)
                     frags.append(head_smi)
                     fragComplete = fragment_recursive(mol_smi_orig, tail_smi, frags, counter, frag_list_len = 0)  
                     if fragComplete:
                         return frags
                 # if reconstruction fails, and there is only one bond, then add the fragment to the fragment list
                 elif (len(bond_idxs) == 1) & (get_size(MolFromSmiles(mol_smi)) >= min_length):
+                    print("Final Fragment: ", mol_smi)
                     frags.append(MolToSmiles(MolFromSmiles(Chem.CanonSmiles(mol_smi)), rootedAtAtom=1))
                     fragComplete = True
                     return frags
@@ -281,11 +288,14 @@ def fragment_recursive(mol_smi_orig:str, mol_smi:str, frags:list, counter:int, f
                 tail_smi = Chem.CanonSmiles(MolToSmiles(tail))
                 head_smi = MolToSmiles(MolFromSmiles(Chem.CanonSmiles(MolToSmiles(head))), rootedAtAtom=1)
                 if check_reconstruction(frags, tail_smi, head_smi, mol_smi_orig) & (get_size(tail) >= min_length):
+                    print("Tail: ", tail_smi)
+                    print("Recurse Head: ", head_smi)
                     frags.append(tail_smi)
                     fragComplete = fragment_recursive(mol_smi_orig, head_smi, frags, counter, frag_list_len = 0)  
                     if fragComplete:
                         return frags
                 elif (len(bond_idxs) == 1) & (get_size(MolFromSmiles(mol_smi)) >= min_length):
+                    print("Final fragment: ", mol_smi)
                     frags.append(MolToSmiles(MolFromSmiles(Chem.CanonSmiles(mol_smi)), rootedAtAtom=1))
                     fragComplete = True
                     return frags
