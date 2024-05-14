@@ -8,7 +8,7 @@ import itertools
 from rdkit import Chem
 from rdkit.Chem import MolToSmiles, MolFromSmiles
 from utils.mol_utils import mol_to_smiles, mols_to_smiles, mols_from_smiles, mol_from_smiles
-from data.fragmentation import replace_last
+from data.fragmentation import replace_last, get_size
 def remove_consecutive(fragments):
     return [i for i, _ in itertools.groupby(fragments)]
 
@@ -56,13 +56,16 @@ def generate_molecules(samples, vocab, check_eos=False):
                 if check_eos:
                     # count the number of "*" in smiles
                     count = sum(1 for c in smiles if c == '*')
-                    if count > 0 and idx < len(running_check):
+                    # check if the number of atoms in the molecule is equal to the number of atoms in frag_smiles
+                    count_atom_mol = get_size(mol)
+                    count_atom_frags = sum([get_size(frag_mol) for frag_mol in frag_mols])
+                    if (count > 0) & (idx < len(running_check)):
                         running_check[idx] = True
                         if idx == len(running_check)-1:
                             return running_check
                         else:
                             continue
-                    elif count == 0 and idx < len(running_check):
+                    elif (count == 0) & (idx < len(running_check)) & (count_atom_mol == count_atom_frags):
                         running_check[idx] = False
                         if idx == len(running_check)-1:
                             return running_check
@@ -87,17 +90,20 @@ def generate_molecules(samples, vocab, check_eos=False):
                 else:
                     continue
             continue
-
-    return result
+    if check_eos:
+        return running_check
+    else:
+        return result
 
 class Sampler:
     """
     A class to sample from the VAE model.
     """
-    def __init__(self, config, vocab, model):
+    def __init__(self, config, vocab, model, std):
         self.config = config
         self.vocab = vocab
         self.model = model
+        self.std = std
     
     def sample(self, num_samples):
         """
@@ -116,7 +122,7 @@ class Sampler:
         count = 0
         total_time = 0
         batch_size = 100
-        sample_std = 1
+        sample_std = self.std
         samples, sampled = [], 0
 
         max_length = self.config.get('max_len')
@@ -150,7 +156,7 @@ class Sampler:
                 else: 
                     count += 1
 
-                if len(samples) % 100 == 0:
+                if len(samples) % 100 < 10:
                     elapsed = time.strftime("%H:%M:%S", time.gmtime(end))
                     print(f'Sampled {len(samples)} molecules. '
                           f'Time elapsed: {elapsed}')
@@ -186,6 +192,7 @@ class Sampler:
         step = 0
 
         while(step < max_length and len(running_seqs) > 0):
+            prob_tracker = torch.zeros(len(running))
             inputs = inputs.unsqueeze(1)
             emb = self.model.embedder(inputs)
             scores, state = self.model.decoder(emb, state, lengths)
@@ -219,10 +226,36 @@ class Sampler:
                 running_mask_check = torch.arange(0, len(probs)).long()
                 # resample if sequence_mask_check_recon is False
                 running_resample = running_mask_check.masked_select(sequence_mask_check[running])
+                # add 1 to the prob_tracker tensor for each index that needs to be resampled
+                prob_tracker[running_resample] += 1
                 # check the second highest prob for each index by running_resample
-                _, indices = torch.topk(probs[running_resample], 2, dim=1)
+                # initialise empty tensor to store the n highest prob
+                indices_tracker = torch.zeros(len(running_resample))
+                for i in range(len(running_resample)):
+                    # get the second highest prob
+                    _, indices = torch.topk(probs[running_resample[i]], int(prob_tracker[running_resample[i]]) + 1, dim=0)
+                    inputs[0, running_resample[i]] = indices[-1]
+                    indices_tracker[i] = indices[-1]
+                #_, indices = torch.topk(probs[running_resample], 2, dim=1)
                 # replace the EOS token with the second highest prob
-                inputs[0, running_resample] = indices[:, 1]
+                #inputs[0, running_resample] = indices[:, 1]
+                #inputs[0, running_resample] = indices_tracker
+            # if this set of inputs is the same as any of the previous inputs
+            if step>0:
+                if self.config.get('sample_repeat') == 'unique_all':
+                    for i in range(len(running)):
+                        # update prob_tracker if the input is the same as any of the previous inputs
+                        while (inputs[0, i] == generated[running[i]]).any():
+                            prob_tracker[i] += 1
+                            _, indices = torch.topk(probs[i], int(prob_tracker[i]) + 1, dim=0)
+                            inputs[0, i] = indices[-1]
+                elif self.config.get('sample_repeat') == 'unique_adjacent':
+                    for i in range(len(running)):
+                        if inputs[0, i] == generated[running[i], step-1]:
+                            prob_tracker[i] += 1
+                            _, indices = torch.topk(probs[i], int(prob_tracker[i]) + 1, dim=0)
+                            inputs[0, i] = indices[-1]
+
             # save next input
             generated = self.update(generated, inputs, running, step)
             # update global running sequence
