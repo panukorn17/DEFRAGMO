@@ -71,10 +71,10 @@ class VAETrainer:
 
         # initialise the beta values for KL annealing
         #beta = [0, 0, 0, 0, 0, 0.002, 0.006, 0.01, 0.1, 0.2, 0.4, 0.6, 0.8, 1, 1]
-        #beta = [0, 0.001, 0.1, 0.6, 1]
+        #beta = [0, 0.1, 0.6, 0.9]
         #beta = [0, 0.01, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1, 1]
         # beta for not summing fingerprints
-        beta = [0.9, 0.9, 0.9, 0.9]
+        beta = self.config.get('beta')
         print('beta:', beta)
         self.beta_list = beta
 
@@ -234,7 +234,9 @@ class VAETrainer:
             fragment_list.extend(frag.split())
         fragment_counts = pd.Series(fragment_list).value_counts()
         penalty = np.sum(np.log(fragment_counts + 1)) / np.log(fragment_counts + 1)
-        penalty_weights = penalty / np.linalg.norm(penalty) * 50
+        penalty_weights = penalty / np.linalg.norm(penalty) * 1000
+        penalty_weights = np.ones(len(penalty_weights))
+        print('Fragment penalty weights:', penalty_weights[0:10])
         return penalty_weights
     
     def print_loss(self, config, epoch, CE_loss, KL_loss, pred_logp, labels_logp, logp_loss, pred_sas, labels_sas, sas_loss, data_index, beta)->None:
