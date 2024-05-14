@@ -109,6 +109,11 @@ def setup_parser()-> argparse.ArgumentParser:
         '--mask_freq',
         type=int, default=2,
         help="masking frequency")
+    parser_train.add_argument(
+        '--beta',
+        type=float, 
+        nargs='+', default=None,
+        help="KL Annealing list which must match the number of epochs")
     
     # create the parser for the "sample" command
     parser_sample = subparsers.add_parser('sample', help='Sample from the vae model')
@@ -123,7 +128,7 @@ def setup_parser()-> argparse.ArgumentParser:
         default=1000, type=int,
         help='number of samples to draw from the model')
     parser_sample.add_argument(
-        '--max_length',
+        '--max_len',
         default=10, type=int,
         help='maximum length of the sampled sequence')
     parser_sample.add_argument(
@@ -135,4 +140,8 @@ def setup_parser()-> argparse.ArgumentParser:
         '--temperature',
         default=1.0, type=float,
         help='sampling temperature')
+    parser_sample.add_argument(
+        '--sample_repeat', default= None,
+        choices=['unique_all', 'unique_adjacent', None],
+        help='how to keep or resample tokens.')
     return parser
