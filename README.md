@@ -40,9 +40,14 @@ To use our fragmentation algorithm, replace `<name_of_method>` with `DEFRAGMO`, 
 ### Training the model
 To train the model run the following command:
 ```bash
-python  src/manage.py train --data_name <name_of_dataset> --use_gpu --batch_size <size_of_batch> --embed_size <embedding_size> --num_epochs <number_of_epochs> --hidden_layers <number_of_hidden_layers> --hidden_size <hidden_size> --latent_size <latent_size> --pooling <pooling_method> --pred_sas --pred_logp --embed_method <method_of_embedding>
+python  src/manage.py train --data_name <name_of_dataset> --use_gpu --batch_size <size_of_batch> --embed_size <embedding_size> --num_epochs <number_of_epochs> --hidden_layers <number_of_hidden_layers> --hidden_size <hidden_size> --latent_size <latent_size> --pooling <pooling_method> --pred_sas --pred_logp --embed_method <method_of_embedding> --beta <kl_annealing_schedule>
 ```
 To get the full list of hyperparameters that can be altered, `run python src/manage.py train --help`. For the embed method, the choices are **mol2vec** (default) or **skipgram** which learns embeddings using a skipgram model using word2vec. Note that if we are using mol2vec embeddings, the **embedding_size has to be 100**.
+
+To replicate the model we trained in our paper, run the following command:
+```bash
+python  src/manage.py train --data_name ZINC --use_gpu --batch_size 128 --embed_size 100 --num_epochs 4 --hidden_layers 2 --hidden_size 128 --latent_size 100 --embed_method mol2vec --beta 1e-6 1e-06 1e-06 1e-06
+```
 
 #### Pooling method
 The original paper did not implement a pooling method for the encoder. To leave the model training under this setting, remove `--pooling <pooling_method>` from the training command (Figure (a)). For our paper, we summed the fingerprint embeddings of each fragment. To implement this model, add `--pooling sum_fingerprints` to the training command (Figure (b)). We've also implemented mean pooling (`--pooling mean`) and max pooling (`--pooling max`) as detailed by [Long et al. (2020)](https://arxiv.org/pdf/1911.03976.pdf) to prevent posterior collapse.
