@@ -11,13 +11,22 @@ conda env create -f environment.yml
 ```
 This will create a conda environment called DEFRAGMO and install all the relevant packages.
 
-2. **Update mol2vec's sentences2vec function** to be compatible with Gensim version 4.0.0+. Locate the *features.py* file from the installed mol2vec library. On line 425, change the following code:
-```python
-keys = set(model.wv.vocab.keys())
-```
-```python
-keys = set(model.wv.key_to_index.keys())
-```
+2. **Set up mol2vec**  
+    **Install mol2vec** by running the following code:
+    ```python
+    pip install git+https://github.com/samoturk/mol2vec
+    ```
+    **Update mol2vec's sentences2vec function** to be compatible with Gensim version 4.0.0+. Locate the location of the mol2vec library by running the following code:
+    ```python
+    pip show mol2vec
+    ```  
+    Locate the *features.py* file from the installed mol2vec library. **On line 425, change the following code**:
+    ```python
+    keys = set(model.wv.vocab.keys())
+    ```
+    ```python
+    keys = set(model.wv.key_to_index.keys())
+    ```
 
 ### Preprocess the dataset
 To preprocess the data run the following command:
