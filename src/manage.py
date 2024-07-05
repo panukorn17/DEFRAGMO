@@ -64,8 +64,10 @@ def sample_model(config):
     trainer, _ = VAETrainer.load(config, vocab, last=load_last)
     std = 1
     sampler = Sampler(config, vocab, trainer.model, std)
+    # get training set mean
+    train_mean, train_std = sampler.get_train_mean_std(dataset)
     #seed = config.get('sampling_seed') if config.get('reproduce') else None
-    samples_tup = sampler.sample(config.get('num_samples'))
+    samples_tup = sampler.sample(config.get('num_samples'), train_mean, train_std)
     # update list of tuples (smiles, frags, num_frags) to df
     samples_list = [(smi, frags, num_frags) for smi, frags, num_frags in samples_tup]
     samples_df = pd.DataFrame(samples_list, columns=['smiles', 'fragments', 'n_fragments'])
@@ -75,7 +77,7 @@ def sample_model(config):
     print(f"Scores: {scores}")
     
 if __name__ == '__main__':
-    debug = False
+    debug = True
     if debug:
         # parse the arguments and call the function
         parser = setup_parser()
@@ -107,7 +109,7 @@ if __name__ == '__main__':
         # simulated arguments for sampling
         simulated_args = [
                 'sample',
-                '--run_dir', 'src/runs/2024-05-14-00-18-21-ZINC',
+                '--run_dir', 'src/runs/2024-07-04-12-49-55-ZINC',
                 '--sampler_method', 'greedy',
                 '--load_last',
                 '--num_samples', '100',
