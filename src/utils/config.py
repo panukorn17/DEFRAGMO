@@ -54,7 +54,8 @@ DEFAULT_EXPT_PARAMS = {
     'temperature': 1.0,
     'sampling_seed': None,
     'sampler_method': 'greedy',
-    'sample_repeat': None
+    'sample_repeat': None,
+    'sample_constant': 1.0,
     }
 
 class Config:

@@ -62,8 +62,8 @@ def sample_model(config):
     vocab = dataset.set_vocab()
     load_last = config.get('load_last')
     trainer, _ = VAETrainer.load(config, vocab, last=load_last)
-    std = 1
-    sampler = Sampler(config, vocab, trainer.model, std)
+    var_const = config.get('sample_constant')
+    sampler = Sampler(config, vocab, trainer.model, var_const)
     # get training set mean
     train_mean, train_std = sampler.get_train_mean_std(dataset)
     #seed = config.get('sampling_seed') if config.get('reproduce') else None
@@ -71,13 +71,13 @@ def sample_model(config):
     # update list of tuples (smiles, frags, num_frags) to df
     samples_list = [(smi, frags, num_frags) for smi, frags, num_frags in samples_tup]
     samples_df = pd.DataFrame(samples_list, columns=['smiles', 'fragments', 'n_fragments'])
-    samples_df.to_csv(config.path('results') / (date_time + f"_std_{std}_samples.smi"), index=False)
+    samples_df.to_csv(config.path('results') / (date_time + f"_std_{var_const}_samples.smi"), index=False)
     dataset = load_data(config, data_type="test")
     scores = score_samples(samples_df, dataset)
     print(f"Scores: {scores}")
     
 if __name__ == '__main__':
-    debug = True
+    debug = False
     if debug:
         # parse the arguments and call the function
         parser = setup_parser()

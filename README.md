@@ -55,13 +55,19 @@ The original paper did not implement a pooling method for the encoder. To leave 
 ### Sampling from the model
 To sample from the model run the following command:
 ```bash
-python  src/manage.py sample --run_dir <directory_of_the_run> --load_last --num_samples <number_of_samples> --max_length <max_length> --sampler_method <method_of_sampling> --temperature <temperature>
+python  src/manage.py sample --run_dir src/runs/<name_of_run> --load_last --num_samples <number_of_samples> --sample_constant <constant_multiplier> --max_length <max_length> --sampler_method <method_of_sampling> --temperature <temperature>
 ```
-1. `<directory_of_the_run>` e.g. src/runs/2024-05-03-11-05-40-ZINC.
+1. `<name_of_run>` e.g. 2024-05-03-11-05-40-ZINC.
 2. `load_last` load the last epoch of the model. Omit this argument and the epoch with the best lost will be loaded.
-3. `<number_of_samples>` e.g. 1000
+3. `<number_of_samples>`. Default is 1000.
+4. `<constant_multiplier>` the constant to be multiplied to the sample standard deviation from the latent space. Default is 1.
 4. `<max_length>` is the maximum tokens to sample. Default is 10.
 5. `<method_of_sampling>` is the sampling method. Choices are greedy (default, sampling greedily from the latent space), sample_first (sample the first token from the distribution and then sampling the rest of the tokens greedily), sample_all (sampling all the tokens except for the EOS token which is greedy).
 6. `<temperature>` is the sampling temperature. Default is 1.
+
+To replicate the sampling configuration from our paper, run the following command:
+```bash
+python  src/manage.py sample --run_dir src/runs/<name_of_run> --num_samples 20000 --sample_constant 25
+```
 
 ![Model Architecture](images/model_architecture_pooling.png)

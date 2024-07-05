@@ -144,4 +144,9 @@ def setup_parser()-> argparse.ArgumentParser:
         '--sample_repeat', default= None,
         choices=['unique_all', 'unique_adjacent', None],
         help='how to keep or resample tokens.')
+    parser_sample.add_argument(
+        '--sample_constant', 
+        default= 1, type=float, 
+        help='constant used to multiply to the sampling variance'
+    )
     return parser

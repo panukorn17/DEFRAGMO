@@ -142,11 +142,11 @@ class Sampler:
     """
     A class to sample from the VAE model.
     """
-    def __init__(self, config, vocab, model, std):
+    def __init__(self, config, vocab, model, var_const):
         self.config = config
         self.vocab = vocab
         self.model = model
-        self.std = std
+        self.var_const = var_const
     
     def get_train_mean_std(self, dataset:MoleculeFragmentsDataset, num_training_points:int=None)->tuple[torch.Tensor, torch.Tensor]:
         """
@@ -226,7 +226,7 @@ class Sampler:
         count = 0
         total_time = 0
         batch_size = 100
-        c = self.std
+        c = self.var_const
         samples, sampled = [], 0
 
         max_length = self.config.get('max_len')
