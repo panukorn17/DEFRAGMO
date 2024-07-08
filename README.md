@@ -67,7 +67,10 @@ python  src/manage.py sample --run_dir src/runs/<name_of_run> --load_last --num_
 
 To replicate the sampling configuration from our paper, run the following command:
 ```bash
-python  src/manage.py sample --run_dir src/runs/<name_of_run> --num_samples 20000 --sample_constant 25
+python  src/manage.py plot --run_dir src/runs/<name_of_run> --sample_name <name_of_file_containing_samples>
 ```
+
+### Plotting the results
+To reproduce the plots from our paper run the following command:
 
 ![Model Architecture](images/model_architecture_pooling.png)

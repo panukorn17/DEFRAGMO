@@ -119,7 +119,7 @@ def setup_parser()-> argparse.ArgumentParser:
     parser_sample = subparsers.add_parser('sample', help='Sample from the vae model')
     parser_sample.add_argument(
         '--run_dir', metavar="FOLDER",
-        help="directory of the run to resume")
+        help="directory of the run in the format src/runs/<name_of_run>.")
     parser_sample.add_argument(
         '--load_last', action="store_true",
         help='load last model instead of best')
@@ -147,6 +147,14 @@ def setup_parser()-> argparse.ArgumentParser:
     parser_sample.add_argument(
         '--sample_constant', 
         default= 1, type=float, 
-        help='constant used to multiply to the sampling variance'
-    )
+        help='constant used to multiply to the sampling variance.')
+
+    # create the parser for the "plot" command
+    parser_plot = subparsers.add_parser('plot', help='Plot the sample properties from a model')
+    parser_plot.add_argument(
+        '--run_dir', metavar="FOLDER",
+        help="directory of the run in the format src/runs/<name_of_run>.")
+    parser_plot.add_argument(
+        '--sample_name', default=None, type=str,
+        help='The name of the file containing the sampled molecules.')
     return parser
