@@ -1,5 +1,5 @@
 # DEFRAGMO "a DEep FRAGment-based generative model for de novo MOLecular design"
-This code is based on the publicly available code by Podda et al. (2020) for the paper "A Deep Generative Model for Fragment-Based Molecule Generation" (AISTATS 2020). The original paper and the proceedings can be found through the following links: [Paper](http://proceedings.mlr.press/v108/podda20a/podda20a.pdf) - [AISTATS 2020 proceedings](http://proceedings.mlr.press/v108/)
+This code is accompanies the paper by Taleongpong and Paige, [“Improving Fragment-Based Deep Molecular Generative Models.”](https://openreview.net/pdf/f8bc0ace232c735192259521a6074bf07bad0c27.pdf)
 
 ### Getting started
 To get started, follow these steps:
