@@ -1,5 +1,5 @@
 # DEFRAGMO "a DEep FRAGment-based generative model for de novo MOLecular design"
-This code is accompanies the paper by Taleongpong and Paige, [“Improving Fragment-Based Deep Molecular Generative Models.”](https://openreview.net/pdf/f8bc0ace232c735192259521a6074bf07bad0c27.pdf)
+This code is accompanies the paper: [“Improving Fragment-Based Deep Molecular Generative Models.”](https://openreview.net/pdf/f8bc0ace232c735192259521a6074bf07bad0c27.pdf)
 
 ### Getting started
 To get started, follow these steps:
