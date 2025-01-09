@@ -418,7 +418,7 @@ class Loss(nn.Module):
         self.sas_loss = None
 
     def forward(self, output, target, mu, sigma, pred_logp, labels_logp, pred_sas, labels_sas, epoch, penalty_weights, beta):
-        output = F.log_softmax(output, dim=1)
+        output = F.log_softmax(output, dim=2)
 
         """# apply penalty weights
         target_pen_weight_lst = []
