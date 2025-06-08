@@ -3,28 +3,17 @@ This code is accompanies the paper: [“Improving Fragment-Based Deep Molecular 
 
 ### Getting started
 To get started, follow these steps:
-1. **Create a Conda Environment** and install all the packages in the `environment.yml` file using the following command:
+1. **Build Docker Image**:
 ```bash
-conda env create -f environment.yml
+docker build -t defragmo .
 ```
-This will create a conda environment called DEFRAGMO and install all the relevant packages.
+This will build the docker image with the defragmo tag and install all the relevant packages.
 
-2. **Set up mol2vec**  
-    **Install mol2vec** by running the following code:
-    ```python
-    pip install git+https://github.com/samoturk/mol2vec
-    ```
-    **Update mol2vec's sentences2vec function** to be compatible with Gensim version 4.0.0+. Locate the location of the mol2vec library by running the following code:
-    ```python
-    pip show mol2vec
-    ```  
-    Locate the *features.py* file from the installed mol2vec library. **On line 425, change the following code**:
-    ```python
-    keys = set(model.wv.vocab.keys())
-    ```
-    ```python
-    keys = set(model.wv.key_to_index.keys())
-    ```
+2. **Hop into container**:
+```bash
+docker run --gpus all -it defragmo bashdocker build -t defragmo .
+```
+This will hop you into the defragmo container
 
 ### Preprocess the dataset
 To preprocess the data run the following command:
