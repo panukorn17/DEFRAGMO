@@ -3,17 +3,33 @@ This code is accompanies the paper: [“Improving Fragment-Based Deep Molecular 
 
 ### Getting started
 To get started, follow these steps:
-1. **Build Docker Image**:
+1. **If you are running this for the first time, build Docker image**:
 ```bash
-docker build -t defragmo .
+docker compose build
 ```
 This will build the docker image with the defragmo tag and install all the relevant packages.
 
-2. **Hop into container**:
+2. **Once the docker image is built, run the container**:
 ```bash
-docker run --gpus all -it defragmo bashdocker build -t defragmo .
+docker compose up -d
+```
+
+3. **Hop into container**:
+```bash
+docker compose exec defragmo bash 
 ```
 This will hop you into the defragmo container
+
+### To Exit
+1. **Exit the container via the terminal**:
+```bash
+exit
+```
+
+2. **Shut down the container**:
+```bash
+docker compose down
+```
 
 ### Preprocess the dataset
 To preprocess the data run the following command:
