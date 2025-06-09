@@ -1,0 +1,13 @@
+services:
+  defragmo:
+    build: .
+    volumes:
+      - ./src/runs:/app/src/runs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    runtime: nvidia
+    stdin_open: true
+    tty: true
