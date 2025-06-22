@@ -2,7 +2,7 @@ services:
   defragmo:
     build: .
     volumes:
-      - ./src/runs:/app/src/runs
+      - ./:/app
     deploy:
       resources:
         reservations:
