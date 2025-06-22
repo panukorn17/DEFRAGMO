@@ -107,6 +107,7 @@ dependencies:
   - pygments=2.17.2
   - pyopenssl=23.2.0
   - pysocks=1.7.1
+  - pytest=8.4.1
   - python=3.11.7
   - python-dateutil=2.8.2
   - python-tzdata=2023.3
