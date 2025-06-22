@@ -21,7 +21,3 @@ RUN conda install -n DEFRAGMO \
     "pytorch::torchaudio=2.2.0=py311_cu118" \
     "pytorch::pytorch-cuda=11.8" \
     --no-deps
-
-COPY src/ ./src/
-COPY data/ ./data/
-
