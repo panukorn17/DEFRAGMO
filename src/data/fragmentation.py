@@ -329,3 +329,8 @@ def break_into_fragments_defragmo(mol:Chem.rdchem.Mol, smi:str)->tuple:
         return smi, smi, 1
     
     return smi, " ".join(frags), len(frags)
+
+if __name__=="__main__":
+    smi = "CC(C)(C)c1ccc2occ(CC(=O)Nc3ccccc3F)c2c1"
+    mol = mol_from_smiles(smi)
+    print(break_into_fragments_defragmo(mol, smi))
