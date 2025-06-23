@@ -6,6 +6,7 @@ from utils.config import DATA_DIR
 from utils.mol_utils import canonicalize, mols_from_smiles
 from data.molecule_structures import count_atoms, count_bonds, count_rings, qed, sas, logp, mr
 from data.fragmentation import break_into_fragments_defragmo, break_into_fragments_podda
+
 def read_and_clean_dataset(info):
     raw_path = DATA_DIR / info['name'] / 'raw'
 
@@ -17,7 +18,7 @@ def read_and_clean_dataset(info):
         dataset = dataset.drop(info['drop'], axis=1)
 
     if info['name'] == 'ZINC':
-        dataset = dataset.replace(r'\n', '', regex=True)
+        dataset = pre_process_zinc(dataset)
 
     if info['name'] == 'GDB17':
         dataset = dataset.sample(n=info['random_sample'])
@@ -34,12 +35,37 @@ def read_and_clean_dataset(info):
         dataset.smiles = correct_smiles.smiles
         dataset = dataset.sample(frac=1, random_state=42)
 
+    dataset = canonicalize_and_drop(dataset)
+
+    return dataset
+
+def pre_process_zinc(dataset):
+    """
+    Removes new line in string
+
+    Parameters:
+    dataset (pd.DataFrame): dataset of the molecules
+
+    Returns:
+    pd.DataFrame: the dataframe of molecules with new lines removed from the string.
+    """
+    return dataset.replace(r'\n', '', regex=True)
+
+def canonicalize_and_drop(dataset):
+    """
+    Canonicalize molecules and drop all null rows
+    
+    Parameters:
+    dataset (pd.DataFrame): dataset of the molecules
+
+    Returns:
+    dataset (pd.DataFrame): the dataframe of canonicalized molecules with no nulls.
+    """
     smiles = dataset.smiles.tolist()
     print("Canonicalizing Molecules...")
     dataset.smiles = [canonicalize(smi, clear_stereo=True) for smi in tqdm(smiles)]
     # drop all null rows
     dataset = dataset[dataset.smiles.notnull()].reset_index(drop=True)
-
     return dataset
 
 def add_atom_counts(dataset:pd.DataFrame, mols:list, info:dict)->pd.DataFrame:
@@ -151,3 +177,18 @@ def save_dataset(dataset, info):
     processed_path = DATA_DIR / info['name'] / 'PROCESSED'
     trainset.to_csv(processed_path / 'train.smi', index=False)
     dataset.to_csv(processed_path / 'test.smi', index=False)
+
+if __name__ == "__main__":
+    dataset = pd.read_csv("../data/ZINC/raw/250k_rndm_zinc_drugs_clean_3.csv")
+    
+    dataset = dataset.head()
+    
+    print(dataset)
+    print(dataset.to_json(orient="records", indent=4))
+    # if info['drop'] != []:
+    #     dataset = dataset.drop(info['drop'], axis=1)
+
+    dataset = pre_process_zinc(dataset)
+    dataset = canonicalize_and_drop(dataset)
+    print(dataset)
+    print(dataset.to_json(orient="records", indent=4))
