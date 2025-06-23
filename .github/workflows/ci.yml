@@ -18,8 +18,8 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Build Docker image
-        run: docker build --progress=plain -t defragmo .
+        run: docker build -q -t defragmo .
 
       - name: Run tests inside Docker container
-        run: docker run --rm defragmo pytest tests/
+        run: docker run --rm defragmo pytest
     
