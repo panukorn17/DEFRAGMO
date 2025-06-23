@@ -1,0 +1,25 @@
+name: CI/CD pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+  
+  steps:
+    - name: Checkout code
+      uses: actions/checkoutv4
+      
+    - name: Build Docker image
+      run: docker build -t defragmo
+
+    - name: Run tests inside Docker container
+      run: docker run --mrm defragmo pytest tests/
+  
