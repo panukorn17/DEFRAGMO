@@ -12,6 +12,10 @@ WORKDIR /app
 
 COPY environment.yml .
 RUN conda env create -f environment.yml
+
+COPY src/ /app/src/
+COPY tests/ /app/tests/
+
 RUN echo "source activate DEFRAGMO" > ~/.bashrc
 ENV PATH /opt/conda/envs/DEFRAGMO/bin:$PATH
 
