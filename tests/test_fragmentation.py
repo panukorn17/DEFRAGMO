@@ -1,7 +1,5 @@
 from src.data.fragmentation import break_into_fragments_defragmo
 from src.utils.mol_utils import mol_from_smiles
-from rdkit import Chem
-
 
 def test_fragmentation_defragmo():
     smi = "CC(C)(C)c1ccc2occ(CC(=O)Nc3ccccc3F)c2c1"
