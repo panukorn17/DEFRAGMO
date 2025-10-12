@@ -6,3 +6,7 @@ notebooks/*
 src/notebooks/*
 images/ZINC/*
 src/calculate_mean_std.ipynb
+
+# pr_summaries
+pr_summary.md
+pr_summary.sh
