@@ -4,6 +4,7 @@ src/test.py
 src/runs/*
 notebooks/*
 src/notebooks/*
+src/nbs/*
 images/ZINC/*
 src/calculate_mean_std.ipynb
 
