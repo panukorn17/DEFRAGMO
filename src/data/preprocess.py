@@ -147,12 +147,20 @@ def add_fragments_defragmo(dataset:pd.DataFrame, mols:list, smiles:list)->pd.Dat
     Returns:
     dataset: the dataframe of molecules with fragments
     """
-    results = [break_into_fragments_defragmo(m, s) for m, s in tqdm(zip(mols, smiles), total=len(mols), desc="Processing molecules")]
-    #results = [break_into_fragments_defragmo(m, s) for m, s in zip(mols, smiles)]
-    smiles, fragments, lengths = zip(*results)
-    dataset["smiles"] = smiles
-    dataset["fragments"] = fragments
-    dataset["n_fragments"] = lengths
+    anchor = [1,5]
+    start = dataset.index[0]
+    end = dataset.index[-1]
+    for i, root in enumerate(anchor):
+        results = [break_into_fragments_defragmo(m, s, rootedAtAtom=root) for m, s in tqdm(zip(mols, smiles), total=len(mols), desc="Processing molecules")]
+        #results = [break_into_fragments_defragmo(m, s) for m, s in zip(mols, smiles)]
+        smiles, fragments, lengths = zip(*results)
+        dataset.loc[start:end, "smiles"] = smiles
+        dataset.loc[start:end,"fragments"] = fragments
+        dataset.loc[start:end,"n_fragments"] = lengths
+        if i <= len(anchor)-2:
+            start = dataset.index[-1] + 1
+            dataset = pd.concat([dataset, dataset], ignore_index=True)
+            end = dataset.index[-1]
     
     return dataset
 
@@ -174,7 +182,7 @@ def save_dataset(dataset, info):
     testset = dataset[dataset.fragments.notnull()]
     trainset = testset[testset.n_fragments >= info['min_length']]
     trainset = trainset[trainset.n_fragments <= info['max_length']]
-    processed_path = DATA_DIR / info['name'] / 'PROCESSED'
+    processed_path = DATA_DIR / info['name'] / 'processed'
     trainset.to_csv(processed_path / 'train.smi', index=False)
     dataset.to_csv(processed_path / 'test.smi', index=False)
 
