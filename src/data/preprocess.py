@@ -161,7 +161,7 @@ def add_fragments_defragmo(dataset:pd.DataFrame, mols:list, smiles:list)->pd.Dat
             start = dataset.index[-1] + 1
             dataset = pd.concat([dataset, dataset], ignore_index=True)
             end = dataset.index[-1]
-    
+    dataset = dataset.drop_duplicates(ignore_index=True)
     return dataset
 
 
