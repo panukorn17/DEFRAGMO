@@ -215,7 +215,7 @@ def check_bond_no(bonds:list, frags:list, frag_list_len:int, smi:str, rootedAtAt
         - fragComplete (bool): a boolean value to indicate whether fragmentation is complete
     """
     if (len(bonds) <= frag_list_len):
-        print("Final Fragment: ", smi)
+        # print("Final Fragment: ", smi)
         frags.append(MolToSmiles(MolFromSmiles(Chem.CanonSmiles(smi)), rootedAtAtom=rootedAtAtom))
         fragComplete = True
         return frags, fragComplete
@@ -268,15 +268,15 @@ def fragment_recursive(mol_smi_orig:str, mol_smi:str, frags:list, counter:int, f
                 head_smi = Chem.CanonSmiles(MolToSmiles(head))
                 tail_smi = MolToSmiles(MolFromSmiles(Chem.CanonSmiles(MolToSmiles(tail))), rootedAtAtom=rootedAtAtom)
                 if check_reconstruction(frags, head_smi, tail_smi, mol_smi_orig) & (get_size(head) >= min_length):
-                    print("Head fragment: ", head_smi)
-                    print("Recurse tail: ", tail_smi)
+                    # print("Head fragment: ", head_smi)
+                    # print("Recurse tail: ", tail_smi)
                     frags.append(head_smi)
                     fragComplete = fragment_recursive(mol_smi_orig, tail_smi, frags, counter, frag_list_len = 0)  
                     if fragComplete:
                         return frags
                 # if reconstruction fails, and there is only one bond, then add the fragment to the fragment list
                 elif (len(bond_idxs) == 1) & (get_size(MolFromSmiles(mol_smi)) >= min_length):
-                    print("Final Fragment: ", mol_smi)
+                    # print("Final Fragment: ", mol_smi)
                     frags.append(MolToSmiles(MolFromSmiles(Chem.CanonSmiles(mol_smi)), rootedAtAtom=rootedAtAtom))
                     fragComplete = True
                     return frags
@@ -288,14 +288,14 @@ def fragment_recursive(mol_smi_orig:str, mol_smi:str, frags:list, counter:int, f
                 tail_smi = Chem.CanonSmiles(MolToSmiles(tail))
                 head_smi = MolToSmiles(MolFromSmiles(Chem.CanonSmiles(MolToSmiles(head))), rootedAtAtom=rootedAtAtom)
                 if check_reconstruction(frags, tail_smi, head_smi, mol_smi_orig) & (get_size(tail) >= min_length):
-                    print("Tail: ", tail_smi)
-                    print("Recurse Head: ", head_smi)
+                    # print("Tail: ", tail_smi)
+                    # print("Recurse Head: ", head_smi)
                     frags.append(tail_smi)
                     fragComplete = fragment_recursive(mol_smi_orig, head_smi, frags, counter, frag_list_len = 0)  
                     if fragComplete:
                         return frags
                 elif (len(bond_idxs) == 1) & (get_size(MolFromSmiles(mol_smi)) >= min_length):
-                    print("Final fragment: ", mol_smi)
+                    # print("Final fragment: ", mol_smi)
                     frags.append(MolToSmiles(MolFromSmiles(Chem.CanonSmiles(mol_smi)), rootedAtAtom=rootedAtAtom))
                     fragComplete = True
                     return frags
