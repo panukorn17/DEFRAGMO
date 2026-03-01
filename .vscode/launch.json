@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach: defragmo (Docker)",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/app"
+        }
+      ],
+      "justMyCode": true
+    },
+    {
+      "name": "Launch: preprocess (manage.py)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/manage.py",
+      "args": [
+        "preprocess",
+        "--data_name",
+        "ZINC",
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

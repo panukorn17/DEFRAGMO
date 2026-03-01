@@ -1,8 +1,14 @@
 services:
   defragmo:
     build: .
+    working_dir: /app
     volumes:
       - ./:/app
+    ports:
+      - "5678:5678"
+    command: >
+      python -m debugpy --listen 0.0.0.0:5678 --wait-for-client
+      /app/src/manage.py preprocess --data_name ZINC --method DEFRAGMO
     deploy:
       resources:
         reservations:
