@@ -85,7 +85,7 @@ class VAETrainer:
             if self.config.get('pred_logp') or self.config.get('pred_sas'):
                 epoch_loss, CE_epoch_loss, KL_epoch_loss, logp_loss, sas_loss = self._train_epoch(epoch, loader, penalty_weights, beta)
             else:
-                epoch_loss, CE_epoch_loss, KL_epoch_loss = self._train_epoch(epoch, loader, penalty_weights, beta)
+                epoch_loss, CE_epoch_loss, KL_epoch_loss = self._train_epoch(epoch, loader, penalty_weights, beta, dataset)
             
             # update the loss lists
             if self.config.get('pred_logp'):
@@ -117,7 +117,7 @@ class VAETrainer:
             self.log_epoch(start, epoch, epoch_loss)
         dump(self.config, self.losses, self.CE_loss, self.KL_loss, self.pred_logp_loss, self.pred_sas_loss, self.beta_list)
     
-    def _train_epoch(self, epoch, loader, penalty_weights, beta)->tuple:
+    def _train_epoch(self, epoch, loader, penalty_weights, beta, dataset)->tuple:
         """
         This method trains the model for one epoch.
 
@@ -137,9 +137,6 @@ class VAETrainer:
         """
         # set the model to train mode
         self.model.train()
-
-        # load the dataset
-        dataset = MoleculeFragmentsDataset(self.config)
 
         # initialise the loss values
         epoch_pred_logp_loss = 0
