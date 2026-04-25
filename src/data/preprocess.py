@@ -1,6 +1,7 @@
 import pandas as pd
 from rdkit import Chem
 from tqdm import tqdm
+from joblib import Parallel, delayed
 
 from utils.config import DATA_DIR
 from utils.mol_utils import canonicalize, mols_from_smiles
@@ -147,7 +148,12 @@ def add_fragments_defragmo(dataset:pd.DataFrame, mols:list, smiles:list)->pd.Dat
     Returns:
     dataset: the dataframe of molecules with fragments
     """
-    results = [break_into_fragments_defragmo(m, s) for m, s in tqdm(zip(mols, smiles), total=len(mols), desc="Processing molecules")]
+    results = list(tqdm(
+        Parallel(n_jobs=-1, return_as="generator")(
+        delayed(break_into_fragments_defragmo)(smi) for smi in dataset.smiles
+        ),
+        total=len(dataset.smiles)
+    ))
     #results = [break_into_fragments_defragmo(m, s) for m, s in zip(mols, smiles)]
     smiles, fragments, lengths = zip(*results)
     dataset["smiles"] = smiles
