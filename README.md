@@ -31,6 +31,32 @@ exit
 docker compose down
 ```
 
+### Code formatting
+
+This project uses [ruff](https://docs.astral.sh/ruff/) for linting and formatting.
+
+**Check for lint errors:**
+```bash
+ruff check .
+```
+
+**Auto-fix lint errors:**
+```bash
+ruff check . --fix
+```
+
+**Format code:**
+```bash
+ruff format .
+```
+
+**Check formatting without making changes:**
+```bash
+ruff format . --check
+```
+
+Configuration is defined in `pyproject.toml` under `[tool.ruff]`.
+
 ### Preprocess the dataset
 To preprocess the data run the following command:
 
