@@ -12,3 +12,65 @@ src/calculate_mean_std.ipynb
 __pycache__/
 *.egg-info/
 dist/
+
+# Python
+*.pyo
+*.pyd
+*.so
+*.pdb
+*.cover
+*.py,cover
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+.ruff_cache/
+.hypothesis/
+*.log
+
+# Build / packaging
+build/
+wheels/
+sdist/
+var/
+*.spec
+
+# Jupyter
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# Data directories (store externally; only small samples in repo)
+data/
+!data/**/*_sample.*
+
+# ML artifacts
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.ckpt
+wandb/
+mlruns/
+lightning_logs/
+
+# Environments
+.env
+.env.*
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.idea/
+*.swp
+*.swo
+*~
