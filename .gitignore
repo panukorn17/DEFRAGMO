@@ -47,6 +47,7 @@ ipython_config.py
 
 # Data directories (store externally; only small samples in repo)
 data/
+!src/data/
 !data/**/*_sample.*
 
 # ML artifacts
