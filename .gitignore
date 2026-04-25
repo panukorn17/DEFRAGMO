@@ -6,3 +6,9 @@ notebooks/*
 src/notebooks/*
 images/ZINC/*
 src/calculate_mean_std.ipynb
+
+# uv / Python environment
+.venv/
+__pycache__/
+*.egg-info/
+dist/
