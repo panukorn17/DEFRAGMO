@@ -172,9 +172,13 @@ class MoleculeFragmentsDataset(Dataset):
         start = time.time()
         collator = DataCollator(self.vocab)
         loader = DataLoader(dataset=self, 
-                            batch_size=16, 
+                            batch_size=self.config.get("batch_size"), 
                             shuffle=True, 
-                            collate_fn=collator)
+                            collate_fn=collator,
+                            num_workers=4,         
+                            pin_memory=True,       
+                            persistent_workers=True
+                            )
         end = time.time()
         formatted_time = time.strftime('%H:%M:%S', time.gmtime(end - start))
         print(f"Time elapsed to get the DataLoader: {formatted_time}.")
