@@ -6,3 +6,14 @@ testpaths = [
 pythonpath = [
     "src"
 ]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]  # E=pycodestyle, F=pyflakes, I=isort
+
+[tool.mypy]
+ignore_missing_imports = true
+disallow_untyped_defs = true
+warn_return_any = true
