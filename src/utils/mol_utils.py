@@ -1,8 +1,10 @@
 import pandas as pd
-
+from tqdm import tqdm
 from rdkit import Chem
 
-def mol_to_smiles(mol):
+def mol_to_smiles(mol:Chem.rdchem.Mol, 
+                  rootedAtAtom:int=None, 
+                  ) -> str: 
     """
     This function converts a molecule to a SMILES string.
 
@@ -12,7 +14,10 @@ def mol_to_smiles(mol):
     Returns:
     str: The SMILES string of the molecule
     """
-    return canonicalize(Chem.MolToSmiles(mol))
+    if rootedAtAtom:
+        return Chem.MolToSmiles(Chem.MolFromSmiles(canonicalize(Chem.MolToSmiles(mol))), rootedAtAtom=rootedAtAtom)
+    else:
+        return canonicalize(Chem.MolToSmiles(mol))
 
 def mol_from_smiles(smiles):
     """
@@ -48,7 +53,7 @@ def mols_from_smiles(smiles):
     Returns:
     list: The list of molecules of the SMILES strings
     """
-    return [mol_from_smiles(smile) for smile in smiles]
+    return [mol_from_smiles(smile) for smile in tqdm(smiles, desc="Converting SMILES")]
 
 def canonicalize(smiles:str, clear_stereo=False):
     """
@@ -63,3 +68,9 @@ def canonicalize(smiles:str, clear_stereo=False):
     if clear_stereo:
         Chem.RemoveStereochemistry(mol)
     return Chem.MolToSmiles(mol, isomericSmiles=True)
+
+def root_smiles(smi:str, 
+                rootedAtAtom:int, 
+                )->str:
+    'Root molecule in smiles format at a defined atom'
+    return Chem.MolToSmiles(mol_from_smiles(smi),rootedAtAtom = rootedAtAtom)
