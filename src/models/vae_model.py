@@ -448,7 +448,7 @@ class Loss(nn.Module):
         CE_loss = -torch.sum(output) / nb_tokens
 
         # compute KL Divergence
-        KL_loss = -0.5 * torch.sum(1 + sigma - mu.pow(2) - sigma.exp())
+        KL_loss = -0.5 * torch.sum(1 + 2*torch.log(sigma) - mu.pow(2) - sigma.pow(2))
 
         if self.config.get('pred_logp'):
             # compute logp loss
